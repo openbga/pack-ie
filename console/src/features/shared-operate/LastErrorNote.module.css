@@ -1,0 +1,23 @@
+.when {
+  color: var(--color-text-muted);
+}
+
+.context {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-2) 0;
+}
+
+.context dt {
+  color: var(--color-text-muted);
+}
+
+.context dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.row {
+  display: contents;
+}

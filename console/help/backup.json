@@ -1,0 +1,27 @@
+{
+  "id": "backup",
+  "title": "Backup",
+  "summary": "Whether backups are current, taking one now, and how to restore.",
+  "routes": ["/settings/backup"],
+  "sections": [
+    {
+      "title": "Backup status",
+      "paragraphs": [
+        "Shows the backup directory, the schedule with its next run, the stale limit, the last success and the last attempt. The state is Up to date, Stale (the newest backup is older than the limit) or No backup yet. A stale warning also appears on the Alerts page and clears after the next successful backup. The directory, schedule and limit are set in bootstrap.json on the lab computer; the console shows them but does not change them."
+      ]
+    },
+    {
+      "title": "Back up now",
+      "paragraphs": [
+        "Takes a backup outside the schedule. The console asks first, then shows Backing up… until the engine finishes; a started backup cannot be cancelled and message traffic is not interrupted. The result lists the directory, files, size, messages, configuration version and audit log position. It is recorded in the audit log, and it is refused while the audit log cannot be written. A failed backup removes what it wrote and shows in the last attempt."
+      ]
+    },
+    {
+      "title": "Restore",
+      "paragraphs": [
+        "A restore is never done from the console. On the lab computer, in an administrator terminal (sudo on macOS and Linux), run the commands this page shows, each aimed at the engine's own bootstrap file with --bootstrap: packie backup verify, service stop, packie backup restore with --yes, then service start. If the console cannot tell the bootstrap file, run packie service status to find it. The replaced state moves to a pre-restore folder.",
+        "Then check the engine: Dashboard shows the channels running, Alerts has no config_rejected alert, Settings → Versions shows the restored configuration and Audit shows backup_restore. Secret values are not in a backup: on a replacement computer, enter them in Settings → Secrets so the channels that need them can connect. A backup holds message content, so keep the backup directory on an encrypted volume."
+      ]
+    }
+  ]
+}

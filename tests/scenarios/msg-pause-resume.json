@@ -1,0 +1,92 @@
+{
+  "format": 1,
+  "name": "msg-pause-resume",
+  "description": "A destination outage degrades a message channel without stopping receipt; pausing stops the source and keeps queued deliveries intact; resuming delivers the queue in order.",
+  "requirements": ["MSG-02", "MSG-04", "BRG-05", "CON-03", "ENG-02"],
+  "timeout_ms": 45000,
+  "resources": { "ports": ["in"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "hl7-in", "label": "HL7 in", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.in}" } },
+        { "endpoint_id": "lis-out", "label": "LIS HL7 interface", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.lis.port}", "connect_timeout_ms": 500 } }
+      ],
+      "channels": [
+        { "channel_id": "hl7-pause", "label": "HL7 pause and resume", "kind": "message",
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 },
+          "source": { "endpoint": "hl7-in", "protocol": "hl7_mllp", "settings": { "ack_mode": "original" } },
+          "destinations": [
+            { "destination_id": "lis", "label": "LIS", "endpoint": "lis-out", "protocol": "hl7_mllp",
+              "settings": { "ack_mode": "original" }, "mapping": null, "delivery": { "ack_timeout_seconds": 5 } }
+          ] }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "tcp_client" },
+    "lis": { "kind": "tcp_server" }
+  },
+  "no_body_leak": ["PID-TEST-009"],
+  "steps": [
+    { "do": "accept", "actor": "lis" },
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.in}" },
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120000||ORU^R01|CTRL-PR-1|P|2.5.1",
+        "PID|1||PID-TEST-009||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0009|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||95|mg/dL|70-110|N|||F|||20260101115900"
+      ] },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA", "assert": [ { "path": "MSH.10", "equals": "CTRL-PR-1" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-PR-1" }, "count": 1,
+      "each": { "state": "acknowledged" } },
+
+    { "do": "close", "actor": "lis" },
+    { "do": "stop_listening", "actor": "lis" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "hl7-pause" },
+      "expect": { "state": "degraded", "source.endpoint.state": "listening", "destinations[destination_id=lis].endpoint.state": "retrying" } },
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "note": "the source keeps receiving and storing while the destination is down",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120100||ORU^R01|CTRL-PR-2|P|2.5.1",
+        "PID|1||PID-TEST-009||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0010|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||97|mg/dL|70-110|N|||F|||20260101120000"
+      ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-PR-2" }, "count": 1,
+      "each": { "state": "queued", "attempts": 0 } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "hl7-pause" },
+      "expect": { "destinations[destination_id=lis].queue.queued": 1, "counters.received": 2 } },
+
+    { "do": "pause_channel", "actor": "engine", "channel": "hl7-pause" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "hl7-pause" },
+      "expect": { "state": "stopped", "stop_reason": "operator_paused" } },
+    { "do": "expect_closed", "actor": "inst" },
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.in}", "expect": "refused" },
+    { "do": "wait", "actor": "engine", "ms": 600 },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-PR-2" }, "count": 1, "within_ms": 0,
+      "each": { "state": "queued", "attempts": 0 } },
+
+    { "do": "listen", "actor": "lis" },
+    { "do": "resume_channel", "actor": "engine", "channel": "hl7-pause" },
+    { "do": "accept", "actor": "lis" },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA", "assert": [ { "path": "MSH.10", "equals": "CTRL-PR-2" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-PR-2" }, "count": 1,
+      "each": { "state": "acknowledged" } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "hl7-pause" },
+      "expect": { "state": "running", "stop_reason": null, "destinations[destination_id=lis].queue.queued": 0 } },
+
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.in}" },
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120200||ORU^R01|CTRL-PR-3|P|2.5.1",
+        "PID|1||PID-TEST-009||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0011|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||99|mg/dL|70-110|N|||F|||20260101120100"
+      ] },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA", "assert": [ { "path": "MSH.10", "equals": "CTRL-PR-3" } ] }
+  ]
+}

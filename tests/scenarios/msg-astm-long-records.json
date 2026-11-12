@@ -1,0 +1,361 @@
+{
+ "format": 1,
+ "name": "msg-astm-long-records",
+ "description": "A long record received as intermediate (ETB) frames is reassembled and stored byte for byte, and an ASTM destination limited to 64-character frames sends exactly the expected frames and checksums.",
+ "requirements": [
+  "PRO-01",
+  "MSG-02"
+ ],
+ "timeout_ms": 30000,
+ "resources": {
+  "ports": [
+   "astm"
+  ]
+ },
+ "engine": {
+  "runtime": {
+   "schema_version": 1,
+   "endpoints": [
+    {
+     "endpoint_id": "astm-in",
+     "label": "Analyzer",
+     "kind": "tcp_listener",
+     "settings": {
+      "bind_address": "127.0.0.1",
+      "port": "${port.astm}"
+     }
+    },
+    {
+     "endpoint_id": "lis-out",
+     "label": "LIS ASTM interface",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis.port}"
+     }
+    }
+   ],
+   "channels": [
+    {
+     "channel_id": "astm-frames",
+     "label": "ASTM long records",
+     "kind": "message",
+     "retry": {
+      "initial_delay_ms": 200,
+      "max_delay_ms": 1000,
+      "multiplier": 2.0,
+      "jitter_percent": 0,
+      "max_consecutive_failures_before_alert": 3
+     },
+     "source": {
+      "endpoint": "astm-in",
+      "protocol": "astm",
+      "settings": {}
+     },
+     "destinations": [
+      {
+       "destination_id": "lis",
+       "label": "LIS",
+       "endpoint": "lis-out",
+       "protocol": "astm",
+       "settings": {
+        "max_frame_chars": 64
+       },
+       "mapping": null,
+       "delivery": {
+        "max_attempts": 3,
+        "send_timeout_seconds": 5,
+        "ack_timeout_seconds": 5,
+        "retry": {
+         "initial_delay_ms": 200,
+         "max_delay_ms": 1000,
+         "multiplier": 2.0,
+         "jitter_percent": 0
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "actors": {
+  "inst": {
+   "kind": "tcp_client"
+  },
+  "lis": {
+   "kind": "tcp_server"
+  }
+ },
+ "no_body_leak": [
+  "PID-TEST-401"
+ ],
+ "steps": [
+  {
+   "do": "accept",
+   "actor": "lis"
+  },
+  {
+   "do": "connect",
+   "actor": "inst",
+   "host": "127.0.0.1",
+   "port": "${port.astm}"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "05"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 31 48 7c 5c 5e 26 7c 7c 7c 53 49 4d 5e 31 2e 30 7c 7c 7c 7c 7c 7c 7c 50 7c 31 7c 32 30 32 36 30 31 30 31 31 32 30 30 30 30 0d 03 42 42 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 32 50 7c 31 7c 50 49 44 2d 54 45 53 54 2d 34 30 31 0d 03 43 37 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 33 4f 7c 31 7c 53 49 44 2d 30 34 30 31 7c 7c 5e 5e 5e 47 4c 55 7c 52 0d 03 35 35 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 34 52 7c 31 7c 5e 5e 5e 47 4c 55 7c 39 35 7c 6d 67 2f 64 4c 7c 7c 4e 7c 7c 46 0d 03 35 45 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 35 43 7c 31 7c 49 7c 53 79 6e 74 68 65 74 69 63 20 6c 6f 6e 67 20 63 6f 6d 6d 65 6e 74 20 30 30 30 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 31 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 32 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 33 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 34 2d 41 42 43 44 45 46 47 17 32 45 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 36 48 49 4a 20 30 30 35 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 36 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 37 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 38 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 39 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 30 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 31 2d 41 42 17 32 36 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 37 43 44 45 46 47 48 49 4a 20 30 31 32 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 33 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 34 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 35 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 36 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 37 2d 41 42 43 44 45 46 47 48 49 4a 20 30 17 36 42 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 30 31 38 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 39 2d 41 42 43 44 45 46 47 48 49 4a 7c 47 0d 03 45 45 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 31 4c 7c 31 7c 4e 0d 03 30 34 0d 0a"
+  },
+  {
+   "do": "expect",
+   "actor": "inst",
+   "hex": "06"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "04"
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "messages",
+   "where": {
+    "channel_id": "astm-frames"
+   },
+   "count": 1,
+   "each": {
+    "state": "routed",
+    "original_text": "H|\\^&|||SIM^1.0|||||||P|1|20260101120000<CR>\nP|1|PID-TEST-401<CR>\nO|1|SID-0401||^^^GLU|R<CR>\nR|1|^^^GLU|95|mg/dL||N||F<CR>\nC|1|I|Synthetic long comment 000-ABCDEFGHIJ 001-ABCDEFGHIJ 002-ABCDEFGHIJ 003-ABCDEFGHIJ 004-ABCDEFGHIJ 005-ABCDEFGHIJ 006-ABCDEFGHIJ 007-ABCDEFGHIJ 008-ABCDEFGHIJ 009-ABCDEFGHIJ 010-ABCDEFGHIJ 011-ABCDEFGHIJ 012-ABCDEFGHIJ 013-ABCDEFGHIJ 014-ABCDEFGHIJ 015-ABCDEFGHIJ 016-ABCDEFGHIJ 017-ABCDEFGHIJ 018-ABCDEFGHIJ 019-ABCDEFGHIJ|G<CR>\nL|1|N<CR>\n"
+   }
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "05"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 31 48 7c 5c 5e 26 7c 7c 7c 53 49 4d 5e 31 2e 30 7c 7c 7c 7c 7c 7c 7c 50 7c 31 7c 32 30 32 36 30 31 30 31 31 32 30 30 30 30 0d 03 42 42 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 32 50 7c 31 7c 50 49 44 2d 54 45 53 54 2d 34 30 31 0d 03 43 37 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 33 4f 7c 31 7c 53 49 44 2d 30 34 30 31 7c 7c 5e 5e 5e 47 4c 55 7c 52 0d 03 35 35 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 34 52 7c 31 7c 5e 5e 5e 47 4c 55 7c 39 35 7c 6d 67 2f 64 4c 7c 7c 4e 7c 7c 46 0d 03 35 45 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 35 43 7c 31 7c 49 7c 53 79 6e 74 68 65 74 69 63 20 6c 6f 6e 67 20 63 6f 6d 6d 65 6e 74 20 30 30 30 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 31 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 32 2d 41 17 36 34 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 36 42 43 44 45 46 47 48 49 4a 20 30 30 33 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 34 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 35 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 36 2d 41 42 43 44 45 17 42 44 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 37 46 47 48 49 4a 20 30 30 37 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 38 2d 41 42 43 44 45 46 47 48 49 4a 20 30 30 39 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 30 2d 41 42 43 44 45 46 47 48 49 17 44 35 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 30 4a 20 30 31 31 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 32 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 33 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 34 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 17 37 30 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 31 35 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 36 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 37 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 38 2d 41 42 43 44 45 46 47 48 49 4a 20 30 31 39 2d 41 42 17 39 46 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 32 43 44 45 46 47 48 49 4a 7c 47 0d 03 33 39 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "02 33 4c 7c 31 7c 4e 0d 03 30 36 0d 0a"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "06"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "04"
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "channel_id": "astm-frames"
+   },
+   "count": 1,
+   "each": {
+    "state": "acknowledged",
+    "total_attempts": 1
+   }
+  }
+ ]
+}

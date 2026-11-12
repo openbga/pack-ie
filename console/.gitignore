@@ -1,0 +1,7 @@
+# Playwright output (npm run e2e)
+/test-results/
+/test-results-*/
+/playwright-report/
+/e2e/manual/state/
+/e2e/manual/logs/
+/e2e/manual/backups/

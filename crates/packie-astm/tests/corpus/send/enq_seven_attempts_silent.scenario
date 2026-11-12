@@ -1,0 +1,46 @@
+# Seven ENQ attempts, each met with silence: EOT and a 4 s wait after each, then the message is abandoned.
+option max_enq_attempts 7
+option busy_retry_delay 4
+record H|\^&|||PACKIE^1.0
+submit
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect send_aborted establishment_failed

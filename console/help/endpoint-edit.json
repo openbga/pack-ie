@@ -1,0 +1,45 @@
+{
+  "id": "endpoint-edit",
+  "title": "Endpoint editor",
+  "summary": "Add or change a serial port, TCP connection, folder or SFTP server.",
+  "routes": ["/endpoints/new", "/endpoints/:id/edit"],
+  "sections": [
+    {
+      "title": "Kind and connection",
+      "paragraphs": [
+        "The kind decides the settings and cannot be changed later; the id is fixed once saved. Serial: the port, baud rate, data bits, parity, stop bits and flow control, as set on the instrument. TCP client: the host and port to connect to. TCP listener: the address to listen on and the port. Idle timeout drops a silent connection after that many seconds (0 is off); keepalive detects a vanished peer."
+      ]
+    },
+    {
+      "title": "Serial port",
+      "paragraphs": [
+        "Choose a port the engine finds on its computer, or type any name, even one not plugged in. A port marked “used by” another endpoint cannot be opened by both. Refresh looks again."
+      ]
+    },
+    {
+      "title": "Who may connect",
+      "paragraphs": [
+        "List the addresses or ranges allowed to connect to a listener. With none, a listener reachable from the network refuses to start unless Allow any peer to connect is ticked."
+      ]
+    },
+    {
+      "title": "Folders and SFTP servers",
+      "paragraphs": [
+        "A folder is read when it is a channel's source and written when it is a destination; use two endpoints for separate in and out folders. Mode is watch for new files or poll on a schedule. File name pattern matches names only: * and ? are wildcards, such as *.csv. An SFTP server also needs a user name, a remote path, a poll interval and the host key fingerprint; a server showing a different key is refused.",
+        "An SFTP password or private key is never typed here: enter the name of a secret and set its value in Settings › Secrets."
+      ]
+    },
+    {
+      "title": "Test connection",
+      "paragraphs": [
+        "Test connection tries the settings as typed, step by step with times. It only opens, connects or reads; a folder test also creates and deletes one empty hidden file. No data is sent and nothing is changed."
+      ]
+    },
+    {
+      "title": "Saving",
+      "paragraphs": [
+        "Changing an endpoint restarts every channel that uses it. An endpoint that channels use cannot be deleted. To check and apply, see Saving and versions help."
+      ]
+    }
+  ]
+}

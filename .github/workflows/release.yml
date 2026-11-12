@@ -1,0 +1,288 @@
+# Release build (draft for the first public release). Run by hand: Actions > Release build.
+#
+# Builds, per platform, the `packie` engine binary (cargo build --release --locked -p packie), the
+# console bundle (Tauri bundler: deb on Linux, .app on macOS, NSIS setup on Windows) and the
+# installer from packaging/ (.deb, .pkg, setup .exe). Everything is uploaded as workflow
+# artifacts named with the version label and the target triple.
+#
+# Platforms: linux x86_64, windows x86_64, macOS arm64 (native) and macOS x86_64 (cross target on
+# the same Apple Silicon runner).
+#
+# The `reproducible` job builds the engine twice on Linux and on macOS, from two checkouts at
+# different paths, and fails unless both binaries have the same SHA-256 (K-02). Build paths are
+# the only known source of differences; packaging/repro-flags.sh maps them to fixed prefixes
+# (rustc --remap-path-prefix, C -ffile-prefix-map, and on macOS ld64 -oso_prefix, which keeps
+# object paths out of the Mach-O UUID). The Linux and macOS release builds use the same flags,
+# so their binaries can be reproduced from the tag.
+#
+# Nothing is signed or notarized (no signing secrets are read), and publishing is deliberately
+# absent: no GitHub release, no package registry, no upload outside workflow artifacts. Download
+# the artifacts, test them, and publish by hand.
+
+name: Release build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Label for artifact names; default is [workspace.package] version of Cargo.toml. Installers always carry the Cargo.toml version."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bundles: deb
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            bundles: app
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUILD_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version label
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          label="${INPUT_VERSION:-$(packaging/version.sh)}"
+          if ! printf '%s' "$label" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._+-]*$'; then
+            echo "::error::version label '$label' may only contain letters, digits, '.', '_', '+' and '-'"
+            exit 1
+          fi
+          echo "label=$label" >> "$GITHUB_OUTPUT"
+
+      # The same Tauri 2 prerequisites as the `tauri` job in ci.yml, plus libudev for the engine
+      # (serialport).
+      - name: System libraries (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev libudev-dev libdbus-1-dev libxdo-dev \
+            libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev libsoup-3.0-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
+      # makensis is not part of the windows-latest image (checked against the runner-images
+      # Windows 2025 readme), so install NSIS 3 from Chocolatey and put it on PATH.
+      - name: NSIS (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install nsis --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw "choco install nsis failed with exit code $LASTEXITCODE" }
+          $nsis = Join-Path ${env:ProgramFiles(x86)} 'NSIS'
+          if (-not (Test-Path (Join-Path $nsis 'makensis.exe'))) { throw "makensis.exe not found in $nsis" }
+          Add-Content -Path $env:GITHUB_PATH -Value $nsis
+
+      - name: Toolchain from rust-toolchain.toml
+        run: |
+          rustup toolchain install
+          rustup target add "$BUILD_TARGET"
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+            console/src-tauri/target
+          key: cargo-release-${{ matrix.target }}-${{ hashFiles('Cargo.lock', 'console/src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: cargo-release-${{ matrix.target }}-
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+
+      - name: Reproducible-build path mapping (Linux, macOS)
+        if: runner.os != 'Windows'
+        run: packaging/repro-flags.sh >> "$GITHUB_ENV"
+
+      - name: Engine (packie)
+        run: cargo build --release --locked -p packie --target "$BUILD_TARGET"
+
+      # No signing identity or updater key is configured: createUpdaterArtifacts is false and no
+      # APPLE_*, TAURI_SIGNING_* or Windows certificate variables are set, so the bundler skips
+      # signing (macOS gets the bundler's linker signature; build-pkg.sh seals it ad hoc).
+      - name: Console dependencies
+        working-directory: console
+        run: npm ci
+
+      - name: Console bundle (Tauri)
+        working-directory: console
+        run: npm run tauri build -- --target "$BUILD_TARGET" --bundles "${{ matrix.bundles }}" -- --locked
+
+      # Installers, using the interfaces documented in packaging/README.md.
+      - name: Installer (Linux)
+        if: runner.os == 'Linux'
+        env:
+          PACKIE_BIN: ${{ github.workspace }}/target/${{ matrix.target }}/release/packie
+        run: packaging/linux/build-deb.sh
+
+      - name: Installer (macOS)
+        if: runner.os == 'macOS'
+        env:
+          PACKIE_BIN: ${{ github.workspace }}/target/${{ matrix.target }}/release/packie
+        run: |
+          bundle="$GITHUB_WORKSPACE/console/src-tauri/target/$BUILD_TARGET/release/bundle/macos"
+          PACKIE_CONSOLE_APP=$(find "$bundle" -maxdepth 1 -name '*.app' -type d | head -n 1)
+          [ -n "$PACKIE_CONSOLE_APP" ] || { echo "::error::no .app under $bundle"; exit 1; }
+          export PACKIE_CONSOLE_APP
+          packaging/macos/build-pkg.sh
+          # upload-artifact zips lose symlinks and modes; ship the console app as a ditto archive.
+          mkdir -p target/packaging
+          ditto -c -k --keepParent "$PACKIE_CONSOLE_APP" "target/packaging/packie-console-$BUILD_TARGET.app.zip"
+
+      - name: Installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          PACKIE_BIN: ${{ github.workspace }}\target\${{ matrix.target }}\release\packie.exe
+        run: |
+          $bundle = Join-Path $env:GITHUB_WORKSPACE "console\src-tauri\target\$env:BUILD_TARGET\release\bundle\nsis"
+          $setup = @(Get-ChildItem -Path $bundle -Filter '*-setup.exe')
+          if ($setup.Count -ne 1) { throw "expected one *-setup.exe in $bundle, found $($setup.Count)" }
+          $env:PACKIE_CONSOLE_INSTALLER = $setup[0].FullName
+          packaging\windows\build.ps1
+
+      - name: Stage artifacts
+        env:
+          LABEL: ${{ steps.version.outputs.label }}
+        run: |
+          stage=release-artifacts
+          mkdir -p "$stage/engine" "$stage/console" "$stage/installer"
+          bundle="console/src-tauri/target/$BUILD_TARGET/release/bundle"
+          case "$RUNNER_OS" in
+            Linux)
+              cp "target/$BUILD_TARGET/release/packie" "$stage/engine/"
+              cp "$bundle"/deb/*.deb "$stage/console/"
+              cp target/packaging/*.deb "$stage/installer/"
+              ;;
+            Windows)
+              cp "target/$BUILD_TARGET/release/packie.exe" "$stage/engine/"
+              cp "$bundle"/nsis/*-setup.exe "$stage/console/"
+              cp target/packaging/*-setup.exe "$stage/installer/"
+              ;;
+            macOS)
+              cp "target/$BUILD_TARGET/release/packie" "$stage/engine/"
+              mv "target/packaging/packie-console-$BUILD_TARGET.app.zip" "$stage/console/"
+              cp target/packaging/*.pkg "$stage/installer/"
+              ;;
+          esac
+          find "$stage" -type f
+          echo "label: $LABEL"
+
+      - name: Upload engine binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: packie-${{ steps.version.outputs.label }}-${{ matrix.target }}
+          path: release-artifacts/engine/*
+          if-no-files-found: error
+
+      - name: Upload console bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: packie-console-${{ steps.version.outputs.label }}-${{ matrix.target }}
+          path: release-artifacts/console/*
+          if-no-files-found: error
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: packie-installer-${{ steps.version.outputs.label }}-${{ matrix.target }}
+          path: release-artifacts/installer/*
+          if-no-files-found: error
+
+  reproducible:
+    name: reproducible engine build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    steps:
+      - name: Checkout at two paths
+        uses: actions/checkout@v4
+        with:
+          path: first
+      - uses: actions/checkout@v4
+        with:
+          path: second/elsewhere
+
+      - name: System libraries (serialport needs libudev)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libudev-dev pkg-config
+
+      - name: Toolchain from rust-toolchain.toml
+        working-directory: first
+        run: rustup toolchain install
+
+      # No build cache: both builds start from nothing, with the same flags and only the
+      # checkout path differing (mapped away by packaging/repro-flags.sh).
+      - name: Build twice and compare
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          for dir in first second/elsewhere; do
+            (
+              cd "$dir"
+              while IFS='=' read -r name value; do export "$name=$value"; done < <(packaging/repro-flags.sh)
+              cargo build --release --locked -p packie --target "$TARGET"
+            )
+          done
+          a="first/target/$TARGET/release/packie"
+          b="second/elsewhere/target/$TARGET/release/packie"
+          shasum -a 256 "$a" "$b" | tee -a "$GITHUB_STEP_SUMMARY"
+          if ! cmp -s "$a" "$b"; then
+            echo "The two builds differ; first differing bytes:" | tee -a "$GITHUB_STEP_SUMMARY"
+            cmp -l "$a" "$b" | head -20 | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "Identical: the engine build is reproducible." | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep both binaries when they differ
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproducible-build-mismatch-${{ matrix.target }}
+          path: |
+            first/target/${{ matrix.target }}/release/packie
+            second/elsewhere/target/${{ matrix.target }}/release/packie

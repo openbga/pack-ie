@@ -1,0 +1,40 @@
+name: Bug report
+description: Something in the engine, the console, an installer or the documentation does not work as described.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a development project tested on synthetic data only. Issues are public:
+        never include patient information, real instrument or laboratory messages, traffic
+        captures, screenshots of real records, or credentials. Report vulnerabilities
+        privately through the repository's Security tab.
+  - type: checkboxes
+    id: synthetic-only
+    attributes:
+      label: Data check
+      options:
+        - label: This report and its attachments contain only synthetic or made-up data and no credentials.
+          required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Use synthetic data. Include the channel kind, protocol, command or console page involved, and the relevant configuration with secrets removed.
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      description: For example the output of `packie --version` or `git rev-parse --short HEAD`.
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system
+      description: For example Windows 11, macOS 26 or Ubuntu 24.04.

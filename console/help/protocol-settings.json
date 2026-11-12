@@ -1,0 +1,34 @@
+{
+  "id": "protocol-settings",
+  "title": "Protocol settings",
+  "summary": "ASTM and HL7 settings, instrument presets and the delimited file template.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "ASTM",
+      "paragraphs": [
+        "Link role is the side PACK-IE plays when both ends start sending at once: Computer yields to the instrument and sends after receiving; Instrument has priority. Characters per frame is 240 unless the instrument documents long frames (up to 64000); both ends must agree. A destination tries ENQ attempts times before the delivery policy retries. A source's Sample id path says where the order record carries the id Messages search by: O.3, or O.4.3 for component 3 of field 4. For AU instruments see AU settings help."
+      ]
+    },
+    {
+      "title": "HL7 v2",
+      "paragraphs": [
+        "Acknowledgement mode Original sends one acknowledgement after the message is stored and checked. Enhanced adds a commit acknowledgement and, when asked, an application acknowledgement. For a destination it is what the receiver is expected to send; None expects none. A source cannot use None.",
+        "The HL7 version is that of the messages PACK-IE writes. Clear Carriage return after the end block for senders that omit it. A destination lists the Accepted answer codes: an order message is answered by ORL or ORR, which must be listed. A source can reply to order messages with an order response; AA then means stored, not that the order was accepted."
+      ]
+    },
+    {
+      "title": "Presets",
+      "paragraphs": [
+        "Instrument presets fill in these settings for known cases. The dialog lists each setting now and after; only changes are written, into fields you can edit. They are not hardware-qualified; test them."
+      ]
+    },
+    {
+      "title": "Delimited files",
+      "paragraphs": [
+        "The column template (a JSON object) describes the file: the delimiter, whether there is a header row, and the columns, each with a name and a type (string, integer, decimal, date or datetime; a date needs a format such as yyyyMMdd). Decimals keep their text exactly. Columns named control_id, sample_id and patient_id fill those identifiers.",
+        "A destination's template also needs a file_name without folders, which may use {message_id}, {control_id}, {sample_id}, {date}, {time} and {seq}."
+      ]
+    }
+  ]
+}

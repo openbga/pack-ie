@@ -1,0 +1,85 @@
+{
+  "format": 1,
+  "name": "msg-crash-restart-reconcile",
+  "description": "After a crash, acknowledged messages are still stored, a delivery that was in flight becomes outcome unknown and is not resent automatically, and the queue continues in order.",
+  "requirements": ["ENG-05", "MSG-02", "MSG-03", "MSG-04", "LOG-03"],
+  "requires": ["test_hooks"],
+  "timeout_ms": 60000,
+  "resources": { "ports": ["in"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "hl7-in", "label": "HL7 in", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.in}" } },
+        { "endpoint_id": "lis-out", "label": "LIS HL7 interface", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.lis.port}", "connect_timeout_ms": 500 } }
+      ],
+      "channels": [
+        { "channel_id": "hl7-crash", "label": "HL7 crash recovery", "kind": "message",
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 },
+          "source": { "endpoint": "hl7-in", "protocol": "hl7_mllp", "settings": { "ack_mode": "original" } },
+          "destinations": [
+            { "destination_id": "lis", "label": "LIS", "endpoint": "lis-out", "protocol": "hl7_mllp",
+              "settings": { "ack_mode": "original" }, "mapping": null, "delivery": { "ack_timeout_seconds": 30 } }
+          ] }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "tcp_client" },
+    "lis": { "kind": "tcp_server", "listen": "manual" }
+  },
+  "no_body_leak": ["PID-TEST-010", "TEST^PATIENT"],
+  "steps": [
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.in}" },
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120000||ORU^R01|CTRL-CR-1|P|2.5.1",
+        "PID|1||PID-TEST-010||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0012|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||95|mg/dL|70-110|N|||F|||20260101115900"
+      ] },
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120100||ORU^R01|CTRL-CR-2|P|2.5.1",
+        "PID|1||PID-TEST-010||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0013|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||97|mg/dL|70-110|N|||F|||20260101120000"
+      ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "channel_id": "hl7-crash" }, "count": 2, "each": { "state": "queued" } },
+
+    { "do": "listen", "actor": "lis" },
+    { "do": "accept", "actor": "lis" },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "none", "assert": [ { "path": "MSH.10", "equals": "CTRL-CR-1" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-CR-1" }, "count": 1, "each": { "state": "sending" } },
+
+    { "do": "crash_engine", "actor": "engine" },
+    { "do": "expect_closed", "actor": "lis" },
+
+    { "do": "start_engine", "actor": "engine" },
+    { "do": "assert_log", "actor": "engine", "event": "reconciliation.completed",
+      "fields": { "unknown": 1, "recovered": 0, "aborted": 0, "requeued": 0 }, "count": 1 },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "hl7-crash" }, "count": 2, "each": { "state": "routed" } },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-CR-1" }, "count": 1,
+      "each": { "state": "outcome_unknown", "reason_code": "engine_restarted" } },
+    { "do": "assert_alert", "actor": "engine", "code": "delivery_needs_attention", "scope": { "channel": "hl7-crash", "destination": "lis" },
+      "expect": { "details.outcome_unknown": 1 } },
+
+    { "do": "accept", "actor": "lis", "timeout_ms": 10000 },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA", "assert": [ { "path": "MSH.10", "equals": "CTRL-CR-2" } ],
+      "note": "the first message on the new connection is the queued one; the unknown one is not resent" },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-CR-2" }, "count": 1,
+      "each": { "state": "acknowledged", "ack_level": "accepted" } },
+    { "do": "expect_no_data", "actor": "lis", "for_ms": 500 },
+
+    { "do": "resend", "actor": "engine", "channel": "hl7-crash", "message": { "control_id": "CTRL-CR-1" },
+      "destinations": "all", "mode": "same_message", "expect": "rejected", "reason_code": "duplicate_risk_unconfirmed" },
+    { "do": "resend", "actor": "engine", "channel": "hl7-crash", "message": { "control_id": "CTRL-CR-1" },
+      "destinations": "all", "mode": "same_message", "confirm_duplicate_risk": true, "expect": "accepted" },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA", "assert": [ { "path": "MSH.10", "equals": "CTRL-CR-1" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-CR-1" }, "count": 1,
+      "each": { "state": "acknowledged", "total_attempts": 2 } },
+    { "do": "assert_alert", "actor": "engine", "code": "delivery_needs_attention", "present": false }
+  ]
+}

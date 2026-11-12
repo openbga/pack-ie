@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "name": "bridge-serial-tcp",
+  "description": "A bridge between a virtual serial port and a TCP client passes binary bytes unchanged, treats read timeouts as idle, and recovers from an unplug.",
+  "requirements": ["BRG-01", "BRG-02", "EPT-01", "EPT-05", "EPT-06"],
+  "requires": ["serial_pair"],
+  "timeout_ms": 45000,
+  "resources": { "serial_pairs": ["inst"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "inst-port", "label": "Analyzer serial port", "kind": "serial",
+          "settings": { "port_name": "${serial.inst.engine}", "baud_rate": 9600, "data_bits": 8, "parity": "none",
+                        "stop_bits": "one", "flow_control": "none", "read_timeout_ms": 200, "write_timeout_ms": 1000 } },
+        { "endpoint_id": "sys-side", "label": "System side", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.sys.port}" } }
+      ],
+      "channels": [
+        { "channel_id": "bridge-serial", "label": "Serial to TCP", "kind": "bridge",
+          "endpoint_a": "inst-port", "endpoint_b": "sys-side",
+          "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "serial_peer", "pair": "inst", "baud_rate": 9600 },
+    "sys": { "kind": "tcp_server" }
+  },
+  "steps": [
+    { "do": "accept", "actor": "sys" },
+    { "do": "connect", "actor": "inst" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-serial" },
+      "expect": { "state": "running", "session_state": "bridged", "endpoint_a.kind": "serial", "endpoint_a.state": "connected" } },
+
+    { "do": "send", "actor": "inst", "hex": "05" },
+    { "do": "expect", "actor": "sys", "hex": "05" },
+    { "do": "send", "actor": "sys", "hex": "06" },
+    { "do": "expect", "actor": "inst", "hex": "06" },
+    { "do": "send", "actor": "inst", "generate": { "pattern": "counter32", "bytes": 4096, "seed": 3 } },
+    { "do": "expect", "actor": "sys", "generate": { "pattern": "counter32", "bytes": 4096, "seed": 3 }, "timeout_ms": 10000 },
+    { "do": "send", "actor": "sys", "generate": { "pattern": "counter32", "bytes": 4096, "seed": 7 } },
+    { "do": "expect", "actor": "inst", "generate": { "pattern": "counter32", "bytes": 4096, "seed": 7 }, "timeout_ms": 10000 },
+
+    { "do": "wait", "actor": "engine", "ms": 1500, "note": "several read timeouts pass with no data" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-serial" },
+      "within_ms": 0,
+      "expect": { "state": "running", "endpoint_a.state": "connected", "endpoint_a.consecutive_failure_count": 0, "retry_count": 0 } },
+
+    { "do": "close", "actor": "inst", "note": "unplug" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-serial" },
+      "expect": { "state": "retrying", "last_error_summary": { "matches": "endpoint A .* (read|write) failed" } } },
+    { "do": "expect_closed", "actor": "sys" },
+
+    { "do": "connect", "actor": "inst", "note": "plug back in" },
+    { "do": "accept", "actor": "sys" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-serial" }, "within_ms": 8000,
+      "expect": { "state": "running", "session_state": "bridged" } },
+    { "do": "send", "actor": "inst", "text": "after-replug" },
+    { "do": "expect", "actor": "sys", "text": "after-replug" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-serial" }, "expect": { "retry_count": 0 } }
+  ]
+}

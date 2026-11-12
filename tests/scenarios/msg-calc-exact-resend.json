@@ -1,0 +1,1778 @@
+{
+ "format": 1,
+ "name": "msg-calc-exact-resend",
+ "description": "Exact decimal calculations inside repeated ASTM results mapped to HL7, appended cross-field results and text steps; a division by zero fails only the second destination until an in-place mapping fix and a resend to it alone, with the original bytes and the first destination's output unchanged.",
+ "requirements": [
+  "MSG-02",
+  "MSG-03",
+  "MSG-05",
+  "MSG-07",
+  "ENG-02",
+  "ENG-03"
+ ],
+ "timeout_ms": 60000,
+ "resources": {
+  "ports": [
+   "astm"
+  ]
+ },
+ "engine": {
+  "runtime": {
+   "schema_version": 1,
+   "endpoints": [
+    {
+     "endpoint_id": "astm-in",
+     "label": "Chemistry analyzer",
+     "kind": "tcp_listener",
+     "settings": {
+      "bind_address": "127.0.0.1",
+      "port": "${port.astm}"
+     }
+    },
+    {
+     "endpoint_id": "lis-out",
+     "label": "LIS HL7 interface",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis.port}"
+     }
+    },
+    {
+     "endpoint_id": "lis2-out",
+     "label": "Second HL7 interface",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis2.port}"
+     }
+    }
+   ],
+   "channels": [
+    {
+     "channel_id": "astm-calc",
+     "label": "ASTM results with calculations",
+     "kind": "message",
+     "retry": {
+      "initial_delay_ms": 200,
+      "max_delay_ms": 1000,
+      "multiplier": 2.0,
+      "jitter_percent": 0,
+      "max_consecutive_failures_before_alert": 3
+     },
+     "source": {
+      "endpoint": "astm-in",
+      "protocol": "astm",
+      "settings": {}
+     },
+     "destinations": [
+      {
+       "destination_id": "lis",
+       "label": "LIS",
+       "endpoint": "lis-out",
+       "protocol": "hl7_mllp",
+       "settings": {
+        "ack_mode": "original",
+        "sending_application": "PACKIE",
+        "receiving_application": "LIS"
+       },
+       "mapping": {
+        "rules": [
+         {
+          "op": "constant",
+          "value": "ORU^R01",
+          "to": "MSH.9"
+         },
+         {
+          "op": "copy",
+          "from": "P.3",
+          "to": "PID.3"
+         },
+         {
+          "op": "copy",
+          "from": "P.4",
+          "steps": [
+           {
+            "step": "strip_leading",
+            "chars": "0"
+           }
+          ],
+          "to": "PID.4"
+         },
+         {
+          "op": "copy",
+          "from": "O.3",
+          "steps": [
+           {
+            "step": "split",
+            "separator": "/",
+            "take": 0
+           }
+          ],
+          "to": "OBR.3"
+         },
+         {
+          "op": "for_each",
+          "over": "R",
+          "into": "OBX",
+          "rules": [
+           {
+            "op": "sequence",
+            "to": "$.1"
+           },
+           {
+            "op": "constant",
+            "value": "NM",
+            "to": "$.2"
+           },
+           {
+            "op": "copy",
+            "from": "$.3.4",
+            "to": "$.3"
+           },
+           {
+            "op": "copy",
+            "from": "$.4",
+            "to": "$.5"
+           },
+           {
+            "op": "copy",
+            "from": "$.5",
+            "to": "$.6"
+           },
+           {
+            "op": "copy",
+            "from": "$.11",
+            "steps": [
+             {
+              "step": "slice",
+              "start": 0,
+              "length": 8
+             }
+            ],
+            "to": "$.16"
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "GLU"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "mul": [
+                {
+                 "from": "$.4"
+                },
+                "0.0555"
+               ]
+              },
+              "to": "$.5",
+              "scale": 2
+             },
+             {
+              "op": "constant",
+              "value": "mmol/L",
+              "to": "$.6"
+             }
+            ]
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "CREA"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "mul": [
+                {
+                 "from": "$.4"
+                },
+                "88.4"
+               ]
+              },
+              "to": "$.5",
+              "scale": 1,
+              "comparator": "carry"
+             },
+             {
+              "op": "constant",
+              "value": "umol/L",
+              "to": "$.6"
+             }
+            ]
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "GTX"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "mul": [
+                {
+                 "from": "$.4"
+                },
+                "88.4"
+               ]
+              },
+              "to": "$.5",
+              "scale": 1
+             }
+            ]
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "K"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "from": "$.4",
+               "steps": [
+                {
+                 "step": "replace",
+                 "find": ",",
+                 "with": "."
+                }
+               ]
+              },
+              "to": "$.5",
+              "scale": 1,
+              "rounding": "half_even"
+             }
+            ]
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "PREC"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "from": "$.4"
+              },
+              "to": "$.5",
+              "scale": 2,
+              "rounding": "half_up"
+             }
+            ]
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "BIG"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "add": [
+                {
+                 "from": "$.4"
+                },
+                "0.000000001"
+               ]
+              },
+              "to": "$.5"
+             }
+            ]
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "HEM"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "mul": [
+                {
+                 "from": "$.4"
+                },
+                "1"
+               ]
+              },
+              "to": "$.5",
+              "on_invalid": "keep"
+             }
+            ]
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "NEGV"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "from": "$.4"
+              },
+              "to": "$.5",
+              "scale": 2
+             }
+            ]
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.3.4",
+             "op": "equals",
+             "value": "TRUNC"
+            },
+            "then": [
+             {
+              "op": "calculate",
+              "formula": {
+               "from": "$.4"
+              },
+              "to": "$.5",
+              "scale": 2,
+              "rounding": "truncate"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "op": "append",
+          "into": "OBX",
+          "rules": [
+           {
+            "op": "calculate",
+            "to": "$.5",
+            "on_invalid": "skip",
+            "formula": {
+             "sub": [
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "NA"
+               },
+               "from": "$.4"
+              },
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "CL"
+               },
+               "from": "$.4"
+              },
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "HCO3"
+               },
+               "from": "$.4"
+              }
+             ]
+            }
+           },
+           {
+            "op": "sequence",
+            "to": "$.1"
+           },
+           {
+            "op": "constant",
+            "value": "NM",
+            "to": "$.2"
+           },
+           {
+            "op": "constant",
+            "value": "AG^Anion gap",
+            "to": "$.3"
+           },
+           {
+            "op": "constant",
+            "value": "mmol/L",
+            "to": "$.6"
+           }
+          ]
+         },
+         {
+          "op": "append",
+          "into": "OBX",
+          "rules": [
+           {
+            "op": "calculate",
+            "to": "$.5",
+            "scale": 3,
+            "rounding": "half_even",
+            "formula": {
+             "div": [
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "NA"
+               },
+               "from": "$.4"
+              },
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "CL"
+               },
+               "from": "$.4"
+              }
+             ]
+            }
+           },
+           {
+            "op": "sequence",
+            "to": "$.1"
+           },
+           {
+            "op": "constant",
+            "value": "NACL^Sodium chloride ratio",
+            "to": "$.3"
+           }
+          ]
+         },
+         {
+          "op": "append",
+          "into": "OBX",
+          "rules": [
+           {
+            "op": "calculate",
+            "to": "$.5",
+            "scale": 2,
+            "comparator": "carry",
+            "formula": {
+             "sub": [
+              "1",
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "CREA"
+               },
+               "from": "$.4"
+              }
+             ]
+            }
+           },
+           {
+            "op": "sequence",
+            "to": "$.1"
+           },
+           {
+            "op": "constant",
+            "value": "REV^Comparator reversal",
+            "to": "$.3"
+           }
+          ]
+         },
+         {
+          "op": "append",
+          "into": "OBX",
+          "rules": [
+           {
+            "op": "calculate",
+            "to": "$.5",
+            "scale": 1,
+            "on_invalid": "skip",
+            "formula": {
+             "div": [
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "NA"
+               },
+               "from": "$.4"
+              },
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "CREA"
+               },
+               "from": "$.4"
+              }
+             ]
+            }
+           },
+           {
+            "op": "sequence",
+            "to": "$.1"
+           },
+           {
+            "op": "constant",
+            "value": "NACR^Comparator divisor",
+            "to": "$.3"
+           }
+          ]
+         }
+        ]
+       },
+       "delivery": {
+        "max_attempts": 3,
+        "send_timeout_seconds": 5,
+        "ack_timeout_seconds": 5,
+        "retry": {
+         "initial_delay_ms": 200,
+         "max_delay_ms": 1000,
+         "multiplier": 2.0,
+         "jitter_percent": 0
+        }
+       }
+      },
+      {
+       "destination_id": "lis2",
+       "label": "Second LIS",
+       "endpoint": "lis2-out",
+       "protocol": "hl7_mllp",
+       "settings": {
+        "ack_mode": "original",
+        "sending_application": "PACKIE",
+        "receiving_application": "LIS2"
+       },
+       "mapping": {
+        "rules": [
+         {
+          "op": "constant",
+          "value": "ORU^R01",
+          "to": "MSH.9"
+         },
+         {
+          "op": "copy",
+          "from": "O.3",
+          "to": "OBR.3"
+         },
+         {
+          "op": "append",
+          "into": "OBX",
+          "rules": [
+           {
+            "op": "calculate",
+            "to": "$.5",
+            "scale": 2,
+            "on_invalid": "error",
+            "formula": {
+             "div": [
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "GLU"
+               },
+               "from": "$.4"
+              },
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "DIL"
+               },
+               "from": "$.4"
+              }
+             ]
+            }
+           },
+           {
+            "op": "sequence",
+            "to": "$.1"
+           },
+           {
+            "op": "constant",
+            "value": "GLUD^Glucose per dilution",
+            "to": "$.3"
+           }
+          ]
+         }
+        ]
+       },
+       "delivery": {
+        "max_attempts": 3,
+        "send_timeout_seconds": 5,
+        "ack_timeout_seconds": 5,
+        "retry": {
+         "initial_delay_ms": 200,
+         "max_delay_ms": 1000,
+         "multiplier": 2.0,
+         "jitter_percent": 0
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "actors": {
+  "inst": {
+   "kind": "tcp_client"
+  },
+  "lis": {
+   "kind": "tcp_server"
+  },
+  "lis2": {
+   "kind": "tcp_server"
+  }
+ },
+ "no_body_leak": [
+  "PID-TEST-101",
+  "TEST^PATIENT",
+  "OPERATOR-SIM-01"
+ ],
+ "steps": [
+  {
+   "do": "accept",
+   "actor": "lis"
+  },
+  {
+   "do": "accept",
+   "actor": "lis2"
+  },
+  {
+   "do": "connect",
+   "actor": "inst",
+   "host": "127.0.0.1",
+   "port": "${port.astm}"
+  },
+  {
+   "do": "send_message",
+   "actor": "inst",
+   "protocol": "astm",
+   "reply_timeout_ms": 5000,
+   "records": [
+    "H|\\^&|||SIM^1.0|||||||P|1|20260101120000",
+    "P|1|PID-TEST-101|000777||TEST^PATIENT||19700101|F",
+    "O|1|SID-0101/02||^^^GLU|R",
+    "R|1|^^^GLU|90|mg/dL||N||F||OPERATOR-SIM-01||20260101115900",
+    "R|2|^^^CREA|<0.1995|mg/dL||L||F",
+    "R|3|^^^NA|140|mmol/L||N||F",
+    "R|4|^^^CL|104|mmol/L||N||F",
+    "R|5|^^^HCO3|24|mmol/L||N||F",
+    "R|6|^^^K|4,25|mmol/L||N||F",
+    "R|7|^^^PREC|1.005|U||N||F",
+    "R|8|^^^BIG|12345678901234567890.123456789|U||N||F",
+    "R|9|^^^HEM|NEG|||N||F",
+    "R|10|^^^NEGV|-2.345|U||N||F",
+    "R|11|^^^TRUNC| 7.899 |U||N||F",
+    "R|12|^^^DIL|0|||N||F",
+    "R|13|^^^GTX|>0.20|mg/dL||H||F",
+    "L|1|N"
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "messages",
+   "where": {
+    "channel_id": "astm-calc"
+   },
+   "count": 1,
+   "each": {
+    "state": "routed",
+    "sample_id": "SID-0101/02",
+    "original_text": "H|\\^&|||SIM^1.0|||||||P|1|20260101120000<CR>\nP|1|PID-TEST-101|000777||TEST^PATIENT||19700101|F<CR>\nO|1|SID-0101/02||^^^GLU|R<CR>\nR|1|^^^GLU|90|mg/dL||N||F||OPERATOR-SIM-01||20260101115900<CR>\nR|2|^^^CREA|<0.1995|mg/dL||L||F<CR>\nR|3|^^^NA|140|mmol/L||N||F<CR>\nR|4|^^^CL|104|mmol/L||N||F<CR>\nR|5|^^^HCO3|24|mmol/L||N||F<CR>\nR|6|^^^K|4,25|mmol/L||N||F<CR>\nR|7|^^^PREC|1.005|U||N||F<CR>\nR|8|^^^BIG|12345678901234567890.123456789|U||N||F<CR>\nR|9|^^^HEM|NEG|||N||F<CR>\nR|10|^^^NEGV|-2.345|U||N||F<CR>\nR|11|^^^TRUNC| 7.899 |U||N||F<CR>\nR|12|^^^DIL|0|||N||F<CR>\nR|13|^^^GTX|>0.20|mg/dL||H||F<CR>\nL|1|N<CR>\n"
+   }
+  },
+  {
+   "do": "expect_message",
+   "actor": "lis",
+   "protocol": "hl7_mllp",
+   "reply": "AA",
+   "assert": [
+    {
+     "path": "MSH.9",
+     "equals": "ORU^R01"
+    },
+    {
+     "path": "PID.3",
+     "equals": "PID-TEST-101"
+    },
+    {
+     "path": "PID.4",
+     "equals": "777"
+    },
+    {
+     "path": "OBR.3",
+     "equals": "SID-0101"
+    },
+    {
+     "path": "OBX[0].16",
+     "equals": "OPERATOR"
+    },
+    {
+     "path": "OBX[0].1",
+     "equals": "1"
+    },
+    {
+     "path": "OBX[0].3",
+     "equals": "GLU"
+    },
+    {
+     "path": "OBX[0].5",
+     "equals": "5.00"
+    },
+    {
+     "path": "OBX[0].6",
+     "equals": "mmol/L"
+    },
+    {
+     "path": "OBX[1].1",
+     "equals": "2"
+    },
+    {
+     "path": "OBX[1].3",
+     "equals": "CREA"
+    },
+    {
+     "path": "OBX[1].5",
+     "equals": "<17.7"
+    },
+    {
+     "path": "OBX[1].6",
+     "equals": "umol/L"
+    },
+    {
+     "path": "OBX[2].1",
+     "equals": "3"
+    },
+    {
+     "path": "OBX[2].3",
+     "equals": "NA"
+    },
+    {
+     "path": "OBX[2].5",
+     "equals": "140"
+    },
+    {
+     "path": "OBX[2].6",
+     "equals": "mmol/L"
+    },
+    {
+     "path": "OBX[3].1",
+     "equals": "4"
+    },
+    {
+     "path": "OBX[3].3",
+     "equals": "CL"
+    },
+    {
+     "path": "OBX[3].5",
+     "equals": "104"
+    },
+    {
+     "path": "OBX[4].1",
+     "equals": "5"
+    },
+    {
+     "path": "OBX[4].3",
+     "equals": "HCO3"
+    },
+    {
+     "path": "OBX[4].5",
+     "equals": "24"
+    },
+    {
+     "path": "OBX[5].1",
+     "equals": "6"
+    },
+    {
+     "path": "OBX[5].3",
+     "equals": "K"
+    },
+    {
+     "path": "OBX[5].5",
+     "equals": "4.2"
+    },
+    {
+     "path": "OBX[6].1",
+     "equals": "7"
+    },
+    {
+     "path": "OBX[6].3",
+     "equals": "PREC"
+    },
+    {
+     "path": "OBX[6].5",
+     "equals": "1.01"
+    },
+    {
+     "path": "OBX[7].1",
+     "equals": "8"
+    },
+    {
+     "path": "OBX[7].3",
+     "equals": "BIG"
+    },
+    {
+     "path": "OBX[7].5",
+     "equals": "12345678901234567890.12345679"
+    },
+    {
+     "path": "OBX[8].1",
+     "equals": "9"
+    },
+    {
+     "path": "OBX[8].3",
+     "equals": "HEM"
+    },
+    {
+     "path": "OBX[8].5",
+     "equals": "NEG"
+    },
+    {
+     "path": "OBX[9].1",
+     "equals": "10"
+    },
+    {
+     "path": "OBX[9].3",
+     "equals": "NEGV"
+    },
+    {
+     "path": "OBX[9].5",
+     "equals": "-2.35"
+    },
+    {
+     "path": "OBX[10].1",
+     "equals": "11"
+    },
+    {
+     "path": "OBX[10].3",
+     "equals": "TRUNC"
+    },
+    {
+     "path": "OBX[10].5",
+     "equals": "7.89"
+    },
+    {
+     "path": "OBX[11].1",
+     "equals": "12"
+    },
+    {
+     "path": "OBX[11].3",
+     "equals": "DIL"
+    },
+    {
+     "path": "OBX[11].5",
+     "equals": "0"
+    },
+    {
+     "path": "OBX[12].1",
+     "equals": "13"
+    },
+    {
+     "path": "OBX[12].3",
+     "equals": "GTX"
+    },
+    {
+     "path": "OBX[12].5",
+     "equals": ">17.6"
+    },
+    {
+     "path": "OBX[13].1",
+     "equals": "14"
+    },
+    {
+     "path": "OBX[13].3",
+     "equals": "AG^Anion gap"
+    },
+    {
+     "path": "OBX[13].5",
+     "equals": "12"
+    },
+    {
+     "path": "OBX[13].6",
+     "equals": "mmol/L"
+    },
+    {
+     "path": "OBX[14].1",
+     "equals": "15"
+    },
+    {
+     "path": "OBX[14].3",
+     "equals": "NACL^Sodium chloride ratio"
+    },
+    {
+     "path": "OBX[14].5",
+     "equals": "1.346"
+    },
+    {
+     "path": "OBX[15].1",
+     "equals": "16"
+    },
+    {
+     "path": "OBX[15].3",
+     "equals": "REV^Comparator reversal"
+    },
+    {
+     "path": "OBX[15].5",
+     "equals": ">0.80"
+    },
+    {
+     "path": "OBX[16].1",
+     "exists": false
+    },
+    {
+     "path": "OBX[16].3",
+     "exists": false
+    }
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "destination_id": "lis"
+   },
+   "count": 1,
+   "each": {
+    "state": "acknowledged",
+    "mapping_version": 1,
+    "total_attempts": 1
+   }
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "destination_id": "lis2"
+   },
+   "count": 1,
+   "each": {
+    "state": "failed",
+    "reason_code": "transform_error",
+    "total_attempts": 0,
+    "last_error": {
+     "matches": "^rule \\S+ \\(calculate\\) at path \\S+: division by zero$"
+    }
+   },
+   "note": "error names rule and path only; the sentinel list proves no value leaks"
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "destination_id": "lis2",
+    "last_error": {
+     "matches": "\\b90\\b|PID-TEST|SID-0101"
+    }
+   },
+   "count": 0,
+   "within_ms": 0
+  },
+  {
+   "do": "assert_alert",
+   "actor": "engine",
+   "code": "transform_failed",
+   "scope": {
+    "channel": "astm-calc",
+    "destination": "lis2"
+   },
+   "expect": {
+    "state": "active"
+   }
+  },
+  {
+   "do": "assert_alert",
+   "actor": "engine",
+   "code": "transform_failed",
+   "scope": {
+    "channel": "astm-calc",
+    "destination": "lis"
+   },
+   "present": false
+  },
+  {
+   "do": "expect_no_data",
+   "actor": "lis2",
+   "for_ms": 500
+  },
+  {
+   "do": "assert_snapshot",
+   "actor": "engine",
+   "target": {
+    "channel": "astm-calc"
+   },
+   "within_ms": 0,
+   "expect": {
+    "state": "running"
+   }
+  },
+  {
+   "do": "apply_config",
+   "actor": "engine",
+   "expect": "applied",
+   "outcomes": {
+    "astm-calc": "updated"
+   },
+   "runtime": {
+    "schema_version": 1,
+    "endpoints": [
+     {
+      "endpoint_id": "astm-in",
+      "label": "Chemistry analyzer",
+      "kind": "tcp_listener",
+      "settings": {
+       "bind_address": "127.0.0.1",
+       "port": "${port.astm}"
+      }
+     },
+     {
+      "endpoint_id": "lis-out",
+      "label": "LIS HL7 interface",
+      "kind": "tcp_client",
+      "settings": {
+       "host": "127.0.0.1",
+       "port": "${actor.lis.port}"
+      }
+     },
+     {
+      "endpoint_id": "lis2-out",
+      "label": "Second HL7 interface",
+      "kind": "tcp_client",
+      "settings": {
+       "host": "127.0.0.1",
+       "port": "${actor.lis2.port}"
+      }
+     }
+    ],
+    "channels": [
+     {
+      "channel_id": "astm-calc",
+      "label": "ASTM results with calculations",
+      "kind": "message",
+      "retry": {
+       "initial_delay_ms": 200,
+       "max_delay_ms": 1000,
+       "multiplier": 2.0,
+       "jitter_percent": 0,
+       "max_consecutive_failures_before_alert": 3
+      },
+      "source": {
+       "endpoint": "astm-in",
+       "protocol": "astm",
+       "settings": {}
+      },
+      "destinations": [
+       {
+        "destination_id": "lis",
+        "label": "LIS",
+        "endpoint": "lis-out",
+        "protocol": "hl7_mllp",
+        "settings": {
+         "ack_mode": "original",
+         "sending_application": "PACKIE",
+         "receiving_application": "LIS"
+        },
+        "mapping": {
+         "rules": [
+          {
+           "op": "constant",
+           "value": "ORU^R01",
+           "to": "MSH.9"
+          },
+          {
+           "op": "copy",
+           "from": "P.3",
+           "to": "PID.3"
+          },
+          {
+           "op": "copy",
+           "from": "P.4",
+           "steps": [
+            {
+             "step": "strip_leading",
+             "chars": "0"
+            }
+           ],
+           "to": "PID.4"
+          },
+          {
+           "op": "copy",
+           "from": "O.3",
+           "steps": [
+            {
+             "step": "split",
+             "separator": "/",
+             "take": 0
+            }
+           ],
+           "to": "OBR.3"
+          },
+          {
+           "op": "for_each",
+           "over": "R",
+           "into": "OBX",
+           "rules": [
+            {
+             "op": "sequence",
+             "to": "$.1"
+            },
+            {
+             "op": "constant",
+             "value": "NM",
+             "to": "$.2"
+            },
+            {
+             "op": "copy",
+             "from": "$.3.4",
+             "to": "$.3"
+            },
+            {
+             "op": "copy",
+             "from": "$.4",
+             "to": "$.5"
+            },
+            {
+             "op": "copy",
+             "from": "$.5",
+             "to": "$.6"
+            },
+            {
+             "op": "copy",
+             "from": "$.11",
+             "steps": [
+              {
+               "step": "slice",
+               "start": 0,
+               "length": 8
+              }
+             ],
+             "to": "$.16"
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "GLU"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "mul": [
+                 {
+                  "from": "$.4"
+                 },
+                 "0.0555"
+                ]
+               },
+               "to": "$.5",
+               "scale": 2
+              },
+              {
+               "op": "constant",
+               "value": "mmol/L",
+               "to": "$.6"
+              }
+             ]
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "CREA"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "mul": [
+                 {
+                  "from": "$.4"
+                 },
+                 "88.4"
+                ]
+               },
+               "to": "$.5",
+               "scale": 1,
+               "comparator": "carry"
+              },
+              {
+               "op": "constant",
+               "value": "umol/L",
+               "to": "$.6"
+              }
+             ]
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "GTX"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "mul": [
+                 {
+                  "from": "$.4"
+                 },
+                 "88.4"
+                ]
+               },
+               "to": "$.5",
+               "scale": 1
+              }
+             ]
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "K"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "from": "$.4",
+                "steps": [
+                 {
+                  "step": "replace",
+                  "find": ",",
+                  "with": "."
+                 }
+                ]
+               },
+               "to": "$.5",
+               "scale": 1,
+               "rounding": "half_even"
+              }
+             ]
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "PREC"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "from": "$.4"
+               },
+               "to": "$.5",
+               "scale": 2,
+               "rounding": "half_up"
+              }
+             ]
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "BIG"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "add": [
+                 {
+                  "from": "$.4"
+                 },
+                 "0.000000001"
+                ]
+               },
+               "to": "$.5"
+              }
+             ]
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "HEM"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "mul": [
+                 {
+                  "from": "$.4"
+                 },
+                 "1"
+                ]
+               },
+               "to": "$.5",
+               "on_invalid": "keep"
+              }
+             ]
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "NEGV"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "from": "$.4"
+               },
+               "to": "$.5",
+               "scale": 2
+              }
+             ]
+            },
+            {
+             "op": "when",
+             "condition": {
+              "path": "$.3.4",
+              "op": "equals",
+              "value": "TRUNC"
+             },
+             "then": [
+              {
+               "op": "calculate",
+               "formula": {
+                "from": "$.4"
+               },
+               "to": "$.5",
+               "scale": 2,
+               "rounding": "truncate"
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "op": "append",
+           "into": "OBX",
+           "rules": [
+            {
+             "op": "calculate",
+             "to": "$.5",
+             "on_invalid": "skip",
+             "formula": {
+              "sub": [
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "NA"
+                },
+                "from": "$.4"
+               },
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "CL"
+                },
+                "from": "$.4"
+               },
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "HCO3"
+                },
+                "from": "$.4"
+               }
+              ]
+             }
+            },
+            {
+             "op": "sequence",
+             "to": "$.1"
+            },
+            {
+             "op": "constant",
+             "value": "NM",
+             "to": "$.2"
+            },
+            {
+             "op": "constant",
+             "value": "AG^Anion gap",
+             "to": "$.3"
+            },
+            {
+             "op": "constant",
+             "value": "mmol/L",
+             "to": "$.6"
+            }
+           ]
+          },
+          {
+           "op": "append",
+           "into": "OBX",
+           "rules": [
+            {
+             "op": "calculate",
+             "to": "$.5",
+             "scale": 3,
+             "rounding": "half_even",
+             "formula": {
+              "div": [
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "NA"
+                },
+                "from": "$.4"
+               },
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "CL"
+                },
+                "from": "$.4"
+               }
+              ]
+             }
+            },
+            {
+             "op": "sequence",
+             "to": "$.1"
+            },
+            {
+             "op": "constant",
+             "value": "NACL^Sodium chloride ratio",
+             "to": "$.3"
+            }
+           ]
+          },
+          {
+           "op": "append",
+           "into": "OBX",
+           "rules": [
+            {
+             "op": "calculate",
+             "to": "$.5",
+             "scale": 2,
+             "comparator": "carry",
+             "formula": {
+              "sub": [
+               "1",
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "CREA"
+                },
+                "from": "$.4"
+               }
+              ]
+             }
+            },
+            {
+             "op": "sequence",
+             "to": "$.1"
+            },
+            {
+             "op": "constant",
+             "value": "REV^Comparator reversal",
+             "to": "$.3"
+            }
+           ]
+          },
+          {
+           "op": "append",
+           "into": "OBX",
+           "rules": [
+            {
+             "op": "calculate",
+             "to": "$.5",
+             "scale": 1,
+             "on_invalid": "skip",
+             "formula": {
+              "div": [
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "NA"
+                },
+                "from": "$.4"
+               },
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "CREA"
+                },
+                "from": "$.4"
+               }
+              ]
+             }
+            },
+            {
+             "op": "sequence",
+             "to": "$.1"
+            },
+            {
+             "op": "constant",
+             "value": "NACR^Comparator divisor",
+             "to": "$.3"
+            }
+           ]
+          }
+         ]
+        },
+        "delivery": {
+         "max_attempts": 3,
+         "send_timeout_seconds": 5,
+         "ack_timeout_seconds": 5,
+         "retry": {
+          "initial_delay_ms": 200,
+          "max_delay_ms": 1000,
+          "multiplier": 2.0,
+          "jitter_percent": 0
+         }
+        }
+       },
+       {
+        "destination_id": "lis2",
+        "label": "Second LIS",
+        "endpoint": "lis2-out",
+        "protocol": "hl7_mllp",
+        "settings": {
+         "ack_mode": "original",
+         "sending_application": "PACKIE",
+         "receiving_application": "LIS2"
+        },
+        "mapping": {
+         "rules": [
+          {
+           "op": "constant",
+           "value": "ORU^R01",
+           "to": "MSH.9"
+          },
+          {
+           "op": "copy",
+           "from": "O.3",
+           "to": "OBR.3"
+          },
+          {
+           "op": "append",
+           "into": "OBX",
+           "rules": [
+            {
+             "op": "calculate",
+             "to": "$.5",
+             "scale": 2,
+             "on_invalid": "error",
+             "formula": {
+              "div": [
+               {
+                "find": "R",
+                "where": {
+                 "path": "$.3.4",
+                 "op": "equals",
+                 "value": "GLU"
+                },
+                "from": "$.4"
+               },
+               {
+                "max": [
+                 {
+                  "find": "R",
+                  "where": {
+                   "path": "$.3.4",
+                   "op": "equals",
+                   "value": "DIL"
+                  },
+                  "from": "$.4"
+                 },
+                 "1"
+                ]
+               }
+              ]
+             }
+            },
+            {
+             "op": "sequence",
+             "to": "$.1"
+            },
+            {
+             "op": "constant",
+             "value": "GLUD^Glucose per dilution",
+             "to": "$.3"
+            }
+           ]
+          }
+         ]
+        },
+        "delivery": {
+         "max_attempts": 3,
+         "send_timeout_seconds": 5,
+         "ack_timeout_seconds": 5,
+         "retry": {
+          "initial_delay_ms": 200,
+          "max_delay_ms": 1000,
+          "multiplier": 2.0,
+          "jitter_percent": 0
+         }
+        }
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "do": "resend",
+   "actor": "engine",
+   "channel": "astm-calc",
+   "message": {
+    "channel_id": "astm-calc"
+   },
+   "destinations": [
+    "lis2"
+   ],
+   "mode": "same_message",
+   "expect": "accepted"
+  },
+  {
+   "do": "expect_message",
+   "actor": "lis2",
+   "protocol": "hl7_mllp",
+   "reply": "AA",
+   "assert": [
+    {
+     "path": "OBR.3",
+     "equals": "SID-0101/02"
+    },
+    {
+     "path": "OBX[0].1",
+     "equals": "1"
+    },
+    {
+     "path": "OBX[0].3",
+     "equals": "GLUD^Glucose per dilution"
+    },
+    {
+     "path": "OBX[0].5",
+     "equals": "90.00"
+    },
+    {
+     "path": "OBX[1].1",
+     "exists": false
+    }
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "destination_id": "lis2"
+   },
+   "count": 1,
+   "each": {
+    "state": "acknowledged",
+    "mapping_version": 2,
+    "total_attempts": 1
+   }
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "destination_id": "lis"
+   },
+   "count": 1,
+   "within_ms": 0,
+   "each": {
+    "state": "acknowledged",
+    "mapping_version": 1,
+    "total_attempts": 1
+   },
+   "note": "the resend to lis2 did not touch lis"
+  },
+  {
+   "do": "expect_no_data",
+   "actor": "lis",
+   "for_ms": 500
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "messages",
+   "where": {
+    "channel_id": "astm-calc"
+   },
+   "count": 1,
+   "within_ms": 0,
+   "each": {
+    "original_text": "H|\\^&|||SIM^1.0|||||||P|1|20260101120000<CR>\nP|1|PID-TEST-101|000777||TEST^PATIENT||19700101|F<CR>\nO|1|SID-0101/02||^^^GLU|R<CR>\nR|1|^^^GLU|90|mg/dL||N||F||OPERATOR-SIM-01||20260101115900<CR>\nR|2|^^^CREA|<0.1995|mg/dL||L||F<CR>\nR|3|^^^NA|140|mmol/L||N||F<CR>\nR|4|^^^CL|104|mmol/L||N||F<CR>\nR|5|^^^HCO3|24|mmol/L||N||F<CR>\nR|6|^^^K|4,25|mmol/L||N||F<CR>\nR|7|^^^PREC|1.005|U||N||F<CR>\nR|8|^^^BIG|12345678901234567890.123456789|U||N||F<CR>\nR|9|^^^HEM|NEG|||N||F<CR>\nR|10|^^^NEGV|-2.345|U||N||F<CR>\nR|11|^^^TRUNC| 7.899 |U||N||F<CR>\nR|12|^^^DIL|0|||N||F<CR>\nR|13|^^^GTX|>0.20|mg/dL||H||F<CR>\nL|1|N<CR>\n"
+   },
+   "note": "original bytes unchanged by the mapping update and resend"
+  },
+  {
+   "do": "assert_alert",
+   "actor": "engine",
+   "code": "transform_failed",
+   "scope": {
+    "channel": "astm-calc",
+    "destination": "lis2"
+   },
+   "present": false
+  }
+ ]
+}

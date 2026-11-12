@@ -1,0 +1,19 @@
+.message {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.fieldsTitle {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* Structured field values are data: monospace, so ids and codes read exactly. */
+.fields dd {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+}

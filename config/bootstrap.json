@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "node": {
+    "node_id": "dev-node",
+    "display_name": "Development node",
+    "environment": "dev"
+  },
+  "paths": {
+    "state_directory": "../state",
+    "log_directory": "../logs"
+  },
+  "ipc": {
+    "group": null
+  },
+  "hosting": {
+    "shutdown_drain_seconds": 15
+  },
+  "runtime": {
+    "versions_kept": 20
+  },
+  "logging": {
+    "level": "info",
+    "retention_days": 30,
+    "ring_buffer_events": 20000
+  },
+  "diagnostics": {
+    "snapshot_interval_seconds": 1
+  },
+  "secrets": {
+    "provider": "keystore"
+  }
+}

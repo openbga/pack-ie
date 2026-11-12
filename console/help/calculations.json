@@ -1,0 +1,28 @@
+{
+  "id": "calculations",
+  "title": "Calculations and text steps",
+  "summary": "Working out numbers and cleaning text in a mapping.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "Calculate",
+      "paragraphs": [
+        "A calculate rule writes the result of a formula in exact decimal arithmetic. Write it as on paper, with + - * / and brackets, min(a, b), max(a, b) and abs(a): $.4 * 0.0555 inside a loop, (OBX[1].5 + OBX[2].5) / 2 outside. Decimal places round the result and write exactly that many places (5.5 with 2 places is 5.50): half up rounds 2.345 to 2.35, half even to 2.34, truncate to 2.34. Without them the exact result is written, and a division needs them. Check a formula against known values before relying on it.",
+        "When it cannot be calculated, a value that is not a number, a zero divisor or a result out of range fails the message, writes nothing, writes the value unchanged (one operand only) or writes the default."
+      ]
+    },
+    {
+      "title": "Values like <5",
+      "paragraphs": [
+        "With Calculate with the number, the result keeps the sign (<5 times 2 is <10, and the sign flips when the direction does); with Not a number, such a value is invalid. For an HL7 structured numeric (OBX-2 SN, such as <^5) choose Number written as SN and use the path of the field, $.5: the sign is component 1, the number component 2."
+      ]
+    },
+    {
+      "title": "Operands and text steps",
+      "paragraphs": [
+        "A value that needs more than a path is an operand: name it under Operands and write @name in the formula. It can read the first record that meets a condition, such as the OBX whose test code is NA, so @na - (@cl + @hco3) gives an anion gap; inside the search $. is the record checked.",
+        "copy, lookup, datetime and path parts of concat can clean the text they read with steps, run in order: trim; remove leading characters; take part of a split (0 first, -1 last); keep part of the text; replace text; upper or lower case."
+      ]
+    }
+  ]
+}

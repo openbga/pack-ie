@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "name": "bridge-tcp-full-duplex",
+  "description": "A bridge between a TCP listener and a TCP client passes bytes unchanged in both directions.",
+  "requirements": ["BRG-01", "BRG-02", "EPT-02", "EPT-06"],
+  "timeout_ms": 30000,
+  "resources": { "ports": ["a"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "inst-side", "label": "Instrument side", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.a}" } },
+        { "endpoint_id": "sys-side", "label": "System side", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.sys.port}" } }
+      ],
+      "channels": [
+        { "channel_id": "bridge-1", "label": "Bridge 1", "kind": "bridge",
+          "endpoint_a": "inst-side", "endpoint_b": "sys-side",
+          "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "tcp_client" },
+    "sys": { "kind": "tcp_server" }
+  },
+  "steps": [
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" },
+      "expect": { "session_state": "waiting_for_peer", "endpoint_a.state": "listening", "endpoint_a.kind": "tcp_listener" } },
+    { "do": "accept", "actor": "sys" },
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.a}" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" },
+      "expect": { "state": "running", "session_state": "bridged", "endpoint_a.state": "connected", "endpoint_b.state": "connected" } },
+
+    { "do": "send", "actor": "inst", "text": "hello from instrument\n" },
+    { "do": "expect", "actor": "sys", "text": "hello from instrument\n" },
+    { "do": "send", "actor": "sys", "text": "hello from system\n" },
+    { "do": "expect", "actor": "inst", "text": "hello from system\n" },
+
+    { "do": "send", "actor": "inst", "generate": { "pattern": "counter32", "bytes": 65536, "seed": 1 } },
+    { "do": "expect", "actor": "sys", "generate": { "pattern": "counter32", "bytes": 65536, "seed": 1 }, "timeout_ms": 10000 },
+    { "do": "send", "actor": "sys", "generate": { "pattern": "counter32", "bytes": 65536, "seed": 2 } },
+    { "do": "expect", "actor": "inst", "generate": { "pattern": "counter32", "bytes": 65536, "seed": 2 }, "timeout_ms": 10000 },
+
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" },
+      "expect": {
+        "state": "running",
+        "counters.bytes_a_to_b": 65558,
+        "counters.bytes_b_to_a": 65554,
+        "counters.messages_a_to_b": null,
+        "retry_count": 0,
+        "endpoint_a.consecutive_failure_count": 0,
+        "endpoint_b.consecutive_failure_count": 0,
+        "last_activity_a_at": { "exists": true },
+        "last_activity_b_at": { "exists": true }
+      } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "node": true },
+      "expect": { "node_state": "healthy", "channel_counts.running": 1, "channel_counts.retrying": 0 } }
+  ]
+}

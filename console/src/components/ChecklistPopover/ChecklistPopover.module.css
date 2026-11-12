@@ -1,0 +1,24 @@
+.popover {
+  min-width: 16rem;
+  max-width: 24rem;
+  max-height: min(24rem, var(--popover-available-height, 24rem));
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  outline: none;
+}
+
+.chevron {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+}

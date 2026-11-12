@@ -1,0 +1,109 @@
+.sidebar {
+  position: relative;
+  grid-area: nav;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  min-height: var(--space-12);
+  padding: var(--space-2);
+}
+
+.title {
+  flex: 1;
+  padding-left: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--control-height);
+  height: var(--control-height);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.control[data-hovered] {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.control svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+.sidebar[data-collapsed] .controls {
+  justify-content: center;
+}
+
+.resize {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: calc(-1 * var(--space-1));
+  width: var(--space-2);
+  z-index: var(--z-sticky);
+  cursor: col-resize;
+  touch-action: pan-y;
+}
+
+.resize::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--space-1);
+  width: 1px;
+}
+
+.resize::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(50% - var(--space-4));
+  inset-inline-start: var(--space-1);
+  width: var(--space-1);
+  height: var(--space-8);
+  border-radius: var(--radius-full);
+  background: var(--color-border-control);
+  transform: translateX(-50%);
+}
+
+.resize:hover::after,
+.resize:focus-visible::after,
+.sidebar[data-resizing] .resize::after {
+  background: var(--color-accent);
+}
+
+.resize:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.sidebar[data-resizing] {
+  user-select: none;
+}
+
+.tooltip {
+  max-width: 24rem;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-text);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  box-shadow: var(--shadow-overlay);
+}

@@ -1,0 +1,21 @@
+{
+  "id": "delivery-states",
+  "title": "Delivery states",
+  "summary": "What each delivery state and acknowledgement level means.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "Delivery states",
+      "paragraphs": [
+        "Queued is waiting for its turn or for a retry; Sending is in progress; Acknowledged reached the required level. Rejected means the destination answered no and it is not retried automatically. Failed means it was not delivered. Timed out means no acknowledgement came in time, and Outcome unknown means the connection ended or the engine stopped before one came; both may have been delivered. Cancelled was closed with a reason.",
+        "Rejected, failed, timed out and outcome unknown need an operator: check the destination, then resend or close the delivery (see Message help)."
+      ]
+    },
+    {
+      "title": "Acknowledgement levels",
+      "paragraphs": [
+        "Handed off: written to the destination, not confirmed by it. Received: received by the destination, processing not confirmed. Accepted: accepted by the destination's application. A lower level is never shown as success, and no level means that a person has read a result. What a destination can prove depends on its protocol: a file destination only Handed off; ASTM and AU class B (which acknowledges every frame) Received; AU class A (no acknowledgement) only Handed off; HL7 Accepted, or Received then Accepted in enhanced mode, and only Handed off when its acknowledgement mode is None."
+      ]
+    }
+  ]
+}

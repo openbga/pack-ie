@@ -1,0 +1,105 @@
+.legend {
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+}
+
+.error {
+  color: var(--tone-danger-text);
+}
+
+.error {
+  font-size: var(--font-size-sm);
+}
+
+.note {
+  color: var(--color-text-muted);
+}
+
+/* A list inside a rule: indented under it, and across the whole row of the rule's fields. */
+.nested {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding-inline-start: var(--space-4);
+  border-inline-start: 2px solid var(--color-border);
+}
+
+.template {
+  align-items: flex-start;
+  min-height: 12rem;
+  padding: var(--space-2);
+  font-family: var(--font-family-mono);
+  resize: vertical;
+}
+
+.valid {
+  color: var(--tone-success-text);
+  font-size: var(--font-size-sm);
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+/* A checkbox with a line of help or an error under it. */
+.checkField {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.checkField > .note,
+.checkField > .error {
+  font-size: var(--font-size-sm);
+}
+
+/* A titled group of fields inside a bigger group, without a box of its own. */
+.group {
+  min-inline-size: 0;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  border: 0;
+}
+
+/* The read-only view of a version: a collection under its heading, one item per line. */
+.disclosure > summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.itemName {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* One difference, `field: old → new`; the values keep their own wrapping. */
+.change {
+  overflow-wrap: anywhere;
+}
+
+.changeDetail {
+  margin-top: var(--space-1);
+}
+
+.changeDetail > summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+/* The lines of a pasted text the editor cannot read, one per line. */
+.problems {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  color: var(--tone-danger-text);
+  font-size: var(--font-size-sm);
+}

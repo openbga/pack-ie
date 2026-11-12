@@ -1,0 +1,29 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.legend {
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+}
+
+.note {
+  color: var(--color-text-muted);
+}
+
+.list[aria-invalid] > .legend,
+.error {
+  color: var(--tone-danger-text);
+}
+
+.error {
+  font-size: var(--font-size-sm);
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

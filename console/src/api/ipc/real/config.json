@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "config_version": 1,
+  "generated_at": "2026-11-06T20:05:50.939243000Z",
+  "diagnostics": {
+    "snapshot_interval_seconds": null,
+    "retain_recent_errors": null
+  },
+  "alerts": {
+    "endpoint_down_seconds": 60,
+    "endpoint_down_critical_seconds": 900,
+    "no_peer_seconds": 0,
+    "buffer_high_percent": 80,
+    "buffer_high_seconds": 10,
+    "delivery_backlog_count": 1000,
+    "delivery_backlog_age_seconds": 300,
+    "delivery_attention_critical_count": 10,
+    "invalid_messages_count": 5,
+    "invalid_messages_window_seconds": 600,
+    "disk_low_megabytes": 1024,
+    "disk_critical_megabytes": 256
+  },
+  "endpoints": [
+    {
+      "endpoint_id": "inst-side",
+      "label": "Instrument side (listener)",
+      "enabled": true,
+      "tags": {},
+      "kind": "tcp_listener",
+      "settings": {
+        "bind_address": "127.0.0.1",
+        "port": 5301,
+        "accept_backlog": 16,
+        "allowed_peer_cidrs": [],
+        "allow_any_peer": false,
+        "idle_timeout_seconds": 0,
+        "keep_alive": true,
+        "keep_alive_time_sec": 30,
+        "keep_alive_interval_sec": 10,
+        "keep_alive_retry_count": 3
+      }
+    },
+    {
+      "endpoint_id": "sys-side",
+      "label": "System side (client)",
+      "enabled": true,
+      "tags": {},
+      "kind": "tcp_client",
+      "settings": {
+        "host": "127.0.0.1",
+        "port": 5302,
+        "connect_timeout_ms": 5000,
+        "idle_timeout_seconds": 0,
+        "keep_alive": true,
+        "keep_alive_time_sec": 30,
+        "keep_alive_interval_sec": 10,
+        "keep_alive_retry_count": 3
+      }
+    }
+  ],
+  "channels": [
+    {
+      "kind": "bridge",
+      "channel_id": "bridge-1",
+      "label": "Instrument to system",
+      "enabled": true,
+      "tags": {},
+      "endpoint_a": "inst-side",
+      "endpoint_b": "sys-side",
+      "connection": {
+        "connect_strategy": "parallel",
+        "receiver": null,
+        "pairing_timeout_ms": 3000
+      },
+      "buffer": {
+        "max_buffered_segments": 1000,
+        "max_bytes": 10485760,
+        "overflow_action": "block_then_degrade",
+        "block_timeout_ms": 5000
+      },
+      "retry": {
+        "initial_delay_ms": 500,
+        "max_delay_ms": 3000,
+        "multiplier": 2.0,
+        "jitter_percent": 0,
+        "max_consecutive_failures_before_alert": 3
+      },
+      "tap": {
+        "framer": "none",
+        "record_messages": false,
+        "max_message_bytes": 1048576
+      }
+    }
+  ]
+}

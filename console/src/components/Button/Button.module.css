@@ -1,0 +1,72 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background-color var(--duration-fast);
+}
+
+.button[data-hovered] {
+  background: var(--color-surface-hover);
+}
+
+.button[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.button[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button[data-pending] {
+  cursor: progress;
+}
+
+.button[data-variant="primary"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
+.button[data-variant="primary"][data-hovered] {
+  background: var(--color-accent-hover);
+}
+
+/* Destructive actions are red text on a neutral button; red fill is for status only. */
+.button[data-variant="danger"] {
+  color: var(--tone-danger-text);
+}
+
+.button[data-variant="quiet"] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.button[data-variant="quiet"][data-hovered] {
+  background: var(--color-surface-hover);
+}
+
+.button svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+}
+
+/* A link that looks like a button needs no underline. */
+.link {
+  text-decoration: none;
+}

@@ -1,0 +1,166 @@
+{
+ "format": 1,
+ "name": "msg-astm-enq-retries",
+ "description": "An ASTM destination with enq_attempts 2 and busy_retry_ms 1000 sends ENQ again only after the busy wait when the receiver answers NAK, gives up after the second ENQ and records the delivery as failed.",
+ "requirements": [
+  "PRO-01",
+  "MSG-03",
+  "MSG-04"
+ ],
+ "timeout_ms": 30000,
+ "resources": {
+  "ports": [
+   "astm"
+  ]
+ },
+ "engine": {
+  "runtime": {
+   "schema_version": 1,
+   "endpoints": [
+    {
+     "endpoint_id": "src",
+     "label": "Source",
+     "kind": "tcp_listener",
+     "settings": {
+      "bind_address": "127.0.0.1",
+      "port": "${port.astm}"
+     }
+    },
+    {
+     "endpoint_id": "dst",
+     "label": "Destination",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis.port}"
+     }
+    }
+   ],
+   "channels": [
+    {
+     "channel_id": "astm-enq",
+     "label": "ASTM busy receiver",
+     "kind": "message",
+     "retry": {
+      "initial_delay_ms": 200,
+      "max_delay_ms": 1000,
+      "multiplier": 2.0,
+      "jitter_percent": 0,
+      "max_consecutive_failures_before_alert": 3
+     },
+     "source": {
+      "endpoint": "src",
+      "protocol": "astm",
+      "settings": {}
+     },
+     "destinations": [
+      {
+       "destination_id": "lis",
+       "label": "LIS",
+       "endpoint": "dst",
+       "protocol": "astm",
+       "settings": {
+        "enq_attempts": 2,
+        "busy_retry_ms": 1000
+       },
+       "mapping": null,
+       "delivery": {
+        "max_attempts": 1,
+        "send_timeout_seconds": 10,
+        "ack_timeout_seconds": 5,
+        "retry": {
+         "initial_delay_ms": 20000,
+         "max_delay_ms": 20000,
+         "multiplier": 2.0,
+         "jitter_percent": 0
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "actors": {
+  "inst": {
+   "kind": "tcp_client"
+  },
+  "lis": {
+   "kind": "tcp_server"
+  }
+ },
+ "no_body_leak": [
+  "PID-TEST-001"
+ ],
+ "steps": [
+  {
+   "do": "accept",
+   "actor": "lis"
+  },
+  {
+   "do": "connect",
+   "actor": "inst",
+   "host": "127.0.0.1",
+   "port": "${port.astm}"
+  },
+  {
+   "do": "send_message",
+   "actor": "inst",
+   "protocol": "astm",
+   "reply_timeout_ms": 5000,
+   "records": [
+    "H|\\^&|||SIM^1.0|||||||P|1|20260101120000",
+    "P|1|PID-TEST-001",
+    "O|1|SID-0601||^^^GLU|R",
+    "R|1|^^^GLU|95|mg/dL||N||F",
+    "L|1|N"
+   ]
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "05"
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "15"
+  },
+  {
+   "do": "expect_no_data",
+   "actor": "lis",
+   "for_ms": 800,
+   "note": "busy_retry_ms 1000"
+  },
+  {
+   "do": "expect",
+   "actor": "lis",
+   "hex": "05",
+   "timeout_ms": 1500
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "15"
+  },
+  {
+   "do": "expect_no_data",
+   "actor": "lis",
+   "for_ms": 2500,
+   "note": "no third ENQ"
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "channel_id": "astm-enq"
+   },
+   "count": 1,
+   "each": {
+    "state": "failed",
+    "total_attempts": 1
+   }
+  }
+ ]
+}

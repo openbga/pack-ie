@@ -1,0 +1,117 @@
+name: Fuzz
+
+# Long-running libFuzzer runs of the pure codecs (fuzz/README.md). Never on push or pull
+# request: weekly, or by hand with a time per target.
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: Minutes to fuzz each target
+        type: string
+        default: "10"
+      targets:
+        description: Space-separated targets to run (empty runs all of fuzz/fuzz_targets)
+        type: string
+        default: ""
+  schedule:
+    - cron: "17 3 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  plan:
+    name: choose targets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      targets: ${{ steps.pick.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pick
+        env:
+          REQUESTED: ${{ inputs.targets }}
+        run: |
+          all=()
+          for file in fuzz/fuzz_targets/*.rs; do
+            name=${file##*/}
+            all+=("${name%.rs}")
+          done
+          read -r -a requested <<< "$REQUESTED"
+          chosen=("${all[@]}")
+          if [ "${#requested[@]}" -gt 0 ]; then
+            chosen=()
+            for name in "${requested[@]}"; do
+              case " ${all[*]} " in
+                *" $name "*) chosen+=("$name") ;;
+                *) echo "::error::unknown fuzz target '$name'"; exit 1 ;;
+              esac
+            done
+          fi
+          json=$(printf '"%s",' "${chosen[@]}")
+          echo "targets=[${json%,}]" >> "$GITHUB_OUTPUT"
+
+  fuzz:
+    name: ${{ matrix.target }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    env:
+      MINUTES: ${{ inputs.minutes || '15' }}
+    defaults:
+      run:
+        working-directory: fuzz
+    steps:
+      - uses: actions/checkout@v4
+      # fuzz/rust-toolchain.toml pins the nightly; rustup reads it from this directory.
+      - name: Nightly toolchain from fuzz/rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            ~/.cargo/bin
+            fuzz/target
+          key: cargo-fuzz-${{ hashFiles('fuzz/Cargo.lock', 'fuzz/rust-toolchain.toml') }}
+          restore-keys: cargo-fuzz-
+      - name: cargo-fuzz
+        run: command -v cargo-fuzz || cargo install cargo-fuzz --locked --version 0.13.2
+      # The working corpus carries over between runs; the seeds in fuzz/corpus are always read.
+      - name: Restore the working corpus
+        uses: actions/cache/restore@v4
+        with:
+          path: fuzz/work/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: fuzz-corpus-${{ matrix.target }}-
+      - name: Fuzz
+        run: ./run.sh "$((MINUTES * 60))" "${{ matrix.target }}"
+      - name: Save the working corpus
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: fuzz/work/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+      - name: Crash inputs and log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-${{ matrix.target }}
+          path: |
+            fuzz/artifacts/${{ matrix.target }}
+            fuzz/work/log/${{ matrix.target }}.log
+          if-no-files-found: warn

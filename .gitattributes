@@ -1,0 +1,5 @@
+# Byte-exact test inputs: checked out exactly as committed on every OS (no CRLF
+# conversion on Windows), since tests assert byte offsets and frame bytes.
+crates/*/tests/fixtures/** -text
+crates/*/tests/corpus/** -text
+fuzz/corpus/** -text

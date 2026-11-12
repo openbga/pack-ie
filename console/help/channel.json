@@ -1,0 +1,27 @@
+{
+  "id": "channel",
+  "title": "Channel",
+  "summary": "One channel: state, endpoints, traffic, errors, alerts and the live transcript.",
+  "routes": ["/channels/:id"],
+  "sections": [
+    {
+      "title": "What you see",
+      "paragraphs": [
+        "The state, the session, the stop reason, the configuration version the instance started from, and a countdown while a retry waits.",
+        "A bridge shows side A and side B (endpoint, state, peer, failure streak, last activity, bytes), bytes each way, framed message counts when a tap is set, and each buffer with its limit and overflow count.",
+        "A message channel shows its source (endpoint state, protocol, session, last received, counters) and one card per destination: queued, sending and unresolved deliveries, oldest queued age, next attempt, last acknowledgement and last error. Deliveries that failed in their mapping were never sent: fix the mapping, then resend. Links open Messages for the channel or its unresolved deliveries; Recent messages lists the last 10.",
+        "The last error shows what happens next, for the part that failed: a destination's error shows that destination's streak and next attempt, apart from the health of the source session."
+      ]
+    },
+    {
+      "title": "Actions",
+      "paragraphs": [
+        "Pause keeps accepted messages queued and asks first. Resume starts from the active configuration. Restart closes the session, resets this instance's counters and asks first. A button is missing when the engine does not allow it now."
+      ]
+    },
+    {
+      "title": "Live transcript",
+      "paragraphs": ["Off until you start it, and shown only to you. See Live transcript help."]
+    }
+  ]
+}

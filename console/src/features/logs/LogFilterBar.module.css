@@ -1,0 +1,52 @@
+.eventField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.eventLabel {
+  composes: label from "../../components/FindField/FindField.module.css";
+}
+
+.eventControl {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Event names are code-like and long: monospace, wide enough for `bridge.close_propagated`. */
+.eventInput {
+  width: 15rem;
+  min-height: var(--control-height);
+  padding: 0 var(--space-8) 0 var(--space-2);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-family-mono);
+  font-size: inherit;
+}
+
+.eventInput::placeholder {
+  color: var(--color-text-muted);
+  font-family: var(--font-family);
+}
+
+.eventInput[data-focused] {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 0;
+}
+
+/* WebKit's own clear button would duplicate ours. */
+.eventInput::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* The same clear button as Find's. */
+.eventClear {
+  composes: fieldButton from "../../components/FindField/FindField.module.css";
+}
+
+.eventField[data-empty] .eventClear {
+  display: none;
+}

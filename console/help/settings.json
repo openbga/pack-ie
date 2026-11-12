@@ -1,0 +1,38 @@
+{
+  "id": "settings",
+  "title": "Settings",
+  "summary": "Engine, retention, secrets, versions, backup, notifications, privacy, about and help.",
+  "routes": ["/settings", "/settings/:tab"],
+  "sections": [
+    {
+      "title": "Engine",
+      "paragraphs": [
+        "Shows the engine's startup settings, read-only: node name and id, hosting, directories and log retention. They are read when the engine starts; to change them, edit bootstrap.json on the lab computer and restart the engine. What the console cannot read shows as Not reported. The alert thresholds below are editable: saving asks for a change note and applies a new configuration version; no channel restarts."
+      ]
+    },
+    {
+      "title": "Retention",
+      "paragraphs": [
+        "The channel editor's retention limits for every message channel in one place; saving asks for a change note and applies a new configuration version. The page also shows the message store's state, its size and the free disk space."
+      ]
+    },
+    {
+      "title": "Secrets",
+      "paragraphs": [
+        "Endpoints and notification targets refer to passwords, keys and tokens by name. Secrets are write-only: add one, set a new value or delete it; a value is never shown again. Values are held in the OS key store (or a restricted file), never in the configuration, logs or exports. Whatever uses a deleted secret cannot sign in or send until a new value is set."
+      ]
+    },
+    {
+      "title": "Privacy",
+      "paragraphs": [
+        "After the idle time you set here, from 1 to 240 minutes (15 by default), the console clears loaded message content, leaves the message detail, closes audit details and asks you to Continue. The setting belongs to this console on this computer; the engine does not know it. There is no login: it hides content, it does not lock the computer."
+      ]
+    },
+    {
+      "title": "Versions, About and Help",
+      "paragraphs": [
+        "Versions is the configuration history: open a version to read it, compare it with the active one, sign it off or roll back (see Saving and versions help). Backup and Notifications have their own help topics. About lists the engine, console and protocol versions, the build, the platform and the licence."
+      ]
+    }
+  ]
+}

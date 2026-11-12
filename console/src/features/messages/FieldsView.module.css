@@ -1,0 +1,44 @@
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* The same framed, scrolling box as a body. */
+.scroll {
+  composes: scroll from "./BodyViewer.module.css";
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--color-border-control);
+  background: var(--color-surface-sunken);
+  text-align: start;
+}
+
+.path,
+.value {
+  padding: 0 var(--space-3);
+  font-family: var(--font-family-mono);
+  line-height: var(--line-height);
+  vertical-align: top;
+}
+
+.path {
+  width: 1%;
+  font-weight: var(--font-weight-regular, 400);
+  text-align: start;
+  white-space: nowrap;
+}
+
+/* A long value wraps rather than stretching the table. */
+.value {
+  overflow-wrap: anywhere;
+}

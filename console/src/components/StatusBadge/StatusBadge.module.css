@@ -1,0 +1,39 @@
+/* Same box for every weight, so grid rows keep their height. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--tone-border);
+  border-radius: var(--radius-full);
+  background: var(--tone-bg);
+  color: var(--tone-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.icon {
+  width: var(--font-size-sm);
+  height: var(--font-size-sm);
+  flex: none;
+}
+
+/* Plain text with a muted icon. */
+.badge[data-tone="neutral"] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.badge[data-tone="neutral"] .icon {
+  color: var(--color-text-muted);
+}
+
+/* Solid: white text on the tone's fill. */
+.badge[data-tone="hold"],
+.badge[data-tone="danger"] {
+  border-color: var(--tone-solid);
+  background: var(--tone-solid);
+  color: var(--color-text-inverse);
+}

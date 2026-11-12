@@ -1,0 +1,38 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.chip[data-hovered] {
+  background: var(--color-surface-hover);
+}
+
+/* On is a tint, a check and the pressed state, never color alone. */
+.chip[data-selected] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+.chip[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.chip[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.check {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}

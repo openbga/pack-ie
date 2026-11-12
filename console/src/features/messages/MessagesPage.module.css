@@ -1,0 +1,12 @@
+/*
+ * Holds the grid and its paging bar so the grid's width can be measured to decide how many
+ * columns fit. It takes the page's remaining height, as the grid does without it.
+ */
+.frame {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: calc(8 * var(--control-height));
+  min-width: 0;
+}

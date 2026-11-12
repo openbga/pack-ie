@@ -1,0 +1,200 @@
+{
+ "format": 1,
+ "name": "msg-calc-multigroup-refused",
+ "description": "One ASTM transmission with two patients and an appended calculation fails that delivery with a transform error instead of attributing the first specimen's value to the second; nothing is sent.",
+ "requirements": [
+  "MSG-07"
+ ],
+ "timeout_ms": 30000,
+ "resources": {
+  "ports": [
+   "astm"
+  ]
+ },
+ "engine": {
+  "runtime": {
+   "schema_version": 1,
+   "endpoints": [
+    {
+     "endpoint_id": "astm-in",
+     "label": "Chemistry analyzer",
+     "kind": "tcp_listener",
+     "settings": {
+      "bind_address": "127.0.0.1",
+      "port": "${port.astm}"
+     }
+    },
+    {
+     "endpoint_id": "lis-out",
+     "label": "LIS ASTM interface",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis.port}"
+     }
+    }
+   ],
+   "channels": [
+    {
+     "channel_id": "astm-groups",
+     "label": "ASTM two specimens",
+     "kind": "message",
+     "retry": {
+      "initial_delay_ms": 200,
+      "max_delay_ms": 1000,
+      "multiplier": 2.0,
+      "jitter_percent": 0,
+      "max_consecutive_failures_before_alert": 3
+     },
+     "source": {
+      "endpoint": "astm-in",
+      "protocol": "astm",
+      "settings": {}
+     },
+     "destinations": [
+      {
+       "destination_id": "lis",
+       "label": "LIS",
+       "endpoint": "lis-out",
+       "protocol": "astm",
+       "settings": {},
+       "mapping": {
+        "rules": [
+         {
+          "op": "append",
+          "into": "R",
+          "rules": [
+           {
+            "op": "calculate",
+            "to": "$.4",
+            "on_invalid": "skip",
+            "formula": {
+             "sub": [
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "NA"
+               },
+               "from": "$.4"
+              },
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "CL"
+               },
+               "from": "$.4"
+              },
+              {
+               "find": "R",
+               "where": {
+                "path": "$.3.4",
+                "op": "equals",
+                "value": "HCO3"
+               },
+               "from": "$.4"
+              }
+             ]
+            }
+           },
+           {
+            "op": "sequence",
+            "to": "$.2"
+           },
+           {
+            "op": "constant",
+            "value": "^^^AG",
+            "to": "$.3"
+           }
+          ]
+         }
+        ]
+       },
+       "delivery": {
+        "max_attempts": 3,
+        "send_timeout_seconds": 5,
+        "ack_timeout_seconds": 5,
+        "retry": {
+         "initial_delay_ms": 200,
+         "max_delay_ms": 1000,
+         "multiplier": 2.0,
+         "jitter_percent": 0
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "actors": {
+  "inst": {
+   "kind": "tcp_client"
+  },
+  "lis": {
+   "kind": "tcp_server"
+  }
+ },
+ "no_body_leak": [
+  "PID-TEST-301",
+  "PID-TEST-302"
+ ],
+ "steps": [
+  {
+   "do": "accept",
+   "actor": "lis"
+  },
+  {
+   "do": "connect",
+   "actor": "inst",
+   "host": "127.0.0.1",
+   "port": "${port.astm}"
+  },
+  {
+   "do": "send_message",
+   "actor": "inst",
+   "protocol": "astm",
+   "reply_timeout_ms": 5000,
+   "records": [
+    "H|\\^&|||SIM^1.0|||||||P|1|20260101120000",
+    "P|1|PID-TEST-301",
+    "O|1|SID-0301||^^^LYTE|R",
+    "R|1|^^^NA|140|mmol/L||N||F",
+    "R|2|^^^CL|104|mmol/L||N||F",
+    "R|3|^^^HCO3|24|mmol/L||N||F",
+    "P|2|PID-TEST-302",
+    "O|1|SID-0302||^^^LYTE|R",
+    "R|1|^^^NA|150|mmol/L||N||F",
+    "R|2|^^^CL|100|mmol/L||N||F",
+    "R|3|^^^HCO3|20|mmol/L||N||F",
+    "L|1|N"
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "channel_id": "astm-groups"
+   },
+   "count": 1,
+   "each": {
+    "state": "failed",
+    "reason_code": "transform_error",
+    "total_attempts": 0,
+    "last_error": {
+     "matches": ": the message holds more than one patient, order or specimen group$"
+    }
+   },
+   "note": "a value computed from the first specimen is never delivered under the second"
+  },
+  {
+   "do": "expect_no_data",
+   "actor": "lis",
+   "for_ms": 500
+  }
+ ]
+}

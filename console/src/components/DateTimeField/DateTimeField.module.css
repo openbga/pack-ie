@@ -1,0 +1,24 @@
+.dateField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dateLabel {
+  font-weight: var(--font-weight-semibold);
+}
+
+.dateInput {
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.dateInput:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 0;
+}

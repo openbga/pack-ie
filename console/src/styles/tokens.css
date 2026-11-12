@@ -1,0 +1,154 @@
+/*
+ * Design tokens: the light theme, then the dark theme's
+ * values for the same color roles. The neutral scale is not themed: --color-neutral-0 stays
+ * the white of paper, for QR codes and report thumbnails.
+ * Light contrast, computed by tokens.test.ts: text 16.6:1; muted text 6.3:1 on the
+ * page, 5.8:1 on the row tint; control border 4.7:1; accent 6.7:1 on white, white on accent
+ * 6.7:1, white on accent hover 8.7:1; focus ring 6.7:1 on white, 5.8:1 on the row tint; each
+ * tone's text on its fill 6.6:1 or more; white on the hold and danger solids 6.6:1 or more.
+ * The test checks the dark theme against the same minimums.
+ */
+:root {
+  color-scheme: light;
+
+  /* Neutral scale */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f6f7f9;
+  --color-neutral-100: #eceef2;
+  --color-neutral-200: #dadee5;
+  --color-neutral-300: #bcc3ce;
+  --color-neutral-500: #6a7484;
+  --color-neutral-600: #525c6b;
+  --color-neutral-700: #3c4550;
+  --color-neutral-900: #1a1f26;
+
+  /* Roles */
+  --color-text: var(--color-neutral-900);
+  --color-text-muted: var(--color-neutral-600);
+  --color-text-inverse: var(--color-neutral-0);
+  --color-surface: var(--color-neutral-0);
+  --color-surface-sunken: var(--color-neutral-50);
+  --color-surface-hover: var(--color-neutral-100);
+  --color-border: var(--color-neutral-200);
+  --color-border-control: var(--color-neutral-500);
+  --color-accent: #0b5cad;
+  --color-accent-hover: #094b8e;
+  --color-accent-subtle: #e7eff9;
+  --color-focus: var(--color-accent);
+  --color-backdrop: rgb(26 31 38 / 45%);
+
+  /* Semantic tones: background, border, text */
+  --tone-info-bg: #edf1f6;
+  --tone-info-border: #7d8ca1;
+  --tone-info-text: #3a4b61;
+  --tone-success-bg: #e5f3e9;
+  --tone-success-border: #2f7d4a;
+  --tone-success-text: #165c31;
+  --tone-warning-bg: #fff1c7;
+  --tone-warning-border: #b07800;
+  --tone-warning-text: #6b4500;
+  /* hold and danger: alert tint (bg, text) and solid badge fill (border, solid) */
+  --tone-danger-bg: #fdeceb;
+  --tone-danger-border: #b3221b;
+  --tone-danger-text: #a3170f;
+  --tone-danger-solid: #b3221b;
+  --tone-hold-bg: #f8e8f3;
+  --tone-hold-border: #9c1f6e;
+  --tone-hold-text: #7d1858;
+  --tone-hold-solid: #9c1f6e;
+  --tone-neutral-bg: var(--color-neutral-100);
+  --tone-neutral-border: var(--color-neutral-500);
+  --tone-neutral-text: var(--color-neutral-700);
+
+  /* Spacing: 4px scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Typography */
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --line-height: 1.45;
+
+  /* Sizes */
+  --control-height: 32px;
+  --icon-size: 16px;
+
+  /* Radii */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+
+  /* Focus ring: visible 2px outline */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* Elevation and layering */
+  --shadow-overlay: 0 8px 24px rgb(26 31 38 / 20%);
+  --z-sticky: 10;
+  --z-overlay: 100;
+  --z-toast: 200;
+
+  /* Motion: never over 150ms */
+  --duration-fast: 120ms;
+}
+
+/*
+ * Dark theme: set by the Appearance choice (app/appearance.ts). Screen only, so printing
+ * stays light. Surfaces get lighter as they rise: page, then panels, then hover.
+ */
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-text: #e6e9ee;
+    --color-text-muted: #a9b2bf;
+    --color-text-inverse: #11151a;
+    --color-surface: #1e232a;
+    --color-surface-sunken: #15191e;
+    --color-surface-hover: #2a3039;
+    --color-border: #353c47;
+    --color-border-control: #7d8797;
+    --color-accent: #6aa8ec;
+    --color-accent-hover: #93c0f2;
+    --color-accent-subtle: #1c3250;
+    --color-backdrop: rgb(0 0 0 / 60%);
+
+    --tone-info-bg: #232c38;
+    --tone-info-border: #8496ad;
+    --tone-info-text: #c0cbdb;
+    --tone-success-bg: #143021;
+    --tone-success-border: #4fa56c;
+    --tone-success-text: #a3dbb4;
+    --tone-warning-bg: #362a0a;
+    --tone-warning-border: #c99a2e;
+    --tone-warning-text: #f2d081;
+    --tone-danger-bg: #3d1715;
+    --tone-danger-border: #f08a84;
+    --tone-danger-text: #ffb3ad;
+    --tone-danger-solid: #f08a84;
+    --tone-hold-bg: #371830;
+    --tone-hold-border: #e48ac2;
+    --tone-hold-text: #f7bde1;
+    --tone-hold-solid: #e48ac2;
+    --tone-neutral-bg: #2a3039;
+    --tone-neutral-border: #8a94a3;
+    --tone-neutral-text: #c8ced8;
+
+    --shadow-overlay: 0 8px 24px rgb(0 0 0 / 50%);
+  }
+}

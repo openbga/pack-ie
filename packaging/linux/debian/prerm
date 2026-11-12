@@ -1,0 +1,22 @@
+#!/bin/sh
+# prerm: stop and remove the service before the binary goes away (also on upgrade; the new
+# postinst installs it again). A service that is not installed is not an error.
+set -e
+
+BOOTSTRAP=/etc/packie/bootstrap.json
+
+case "$1" in
+    remove | upgrade | deconfigure)
+        if [ -x /usr/bin/packie ] && [ -d /run/systemd/system ]; then
+            /usr/bin/packie --bootstrap "$BOOTSTRAP" service uninstall ||
+                echo "packie: 'service uninstall' failed (not installed?); continuing" >&2
+        fi
+        ;;
+    failed-upgrade) ;;
+    *)
+        echo "prerm called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

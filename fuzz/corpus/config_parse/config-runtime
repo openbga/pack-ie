@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "endpoints": [
+    {
+      "endpoint_id": "analyzer-serial",
+      "label": "Analyzer serial port",
+      "kind": "serial",
+      "settings": {
+        "port_name": "COM3",
+        "baud_rate": 9600,
+        "data_bits": 8,
+        "parity": "none",
+        "stop_bits": "one",
+        "flow_control": "none"
+      }
+    },
+    {
+      "endpoint_id": "lis-bridge",
+      "label": "LIS bridge listener",
+      "kind": "tcp_listener",
+      "settings": {
+        "bind_address": "192.168.10.10",
+        "port": 5100,
+        "allowed_peer_cidrs": [
+          "192.168.10.20/32"
+        ]
+      }
+    },
+    {
+      "endpoint_id": "analyzer-astm",
+      "label": "Analyzer ASTM listener",
+      "kind": "tcp_listener",
+      "settings": {
+        "bind_address": "192.168.10.10",
+        "port": 5200,
+        "allowed_peer_cidrs": [
+          "192.168.10.30/32"
+        ]
+      }
+    },
+    {
+      "endpoint_id": "lis-hl7",
+      "label": "LIS MLLP destination",
+      "kind": "tcp_client",
+      "settings": {
+        "host": "192.168.10.20",
+        "port": 6661
+      }
+    }
+  ],
+  "channels": [
+    {
+      "channel_id": "analyzer-bridge",
+      "label": "Analyzer bridge to LIS",
+      "kind": "bridge",
+      "endpoint_a": "analyzer-serial",
+      "endpoint_b": "lis-bridge",
+      "connection": {
+        "connect_strategy": "receiver_then_sender",
+        "receiver": "b",
+        "pairing_timeout_ms": 5000
+      },
+      "tap": {
+        "framer": "astm",
+        "record_messages": false
+      }
+    },
+    {
+      "channel_id": "analyzer-results",
+      "label": "Analyzer results to LIS",
+      "kind": "message",
+      "source": {
+        "endpoint": "analyzer-astm",
+        "protocol": "astm",
+        "settings": {
+          "role": "computer",
+          "charset": "latin1"
+        },
+        "duplicate_detection": true
+      },
+      "destinations": [
+        {
+          "destination_id": "d1",
+          "label": "LIS",
+          "endpoint": "lis-hl7",
+          "protocol": "hl7_mllp",
+          "settings": {
+            "ack_mode": "original"
+          },
+          "mapping": {
+            "tables": {
+              "tests": {
+                "GLU": "GLU^Glucose^L",
+                "NA": "NA^Sodium^L"
+              }
+            },
+            "rules": [
+              {
+                "op": "constant",
+                "value": "ORU^R01",
+                "to": "MSH.9"
+              },
+              {
+                "op": "constant",
+                "value": "PACKIE",
+                "to": "MSH.3"
+              },
+              {
+                "op": "constant",
+                "value": "LIS",
+                "to": "MSH.5"
+              },
+              {
+                "op": "copy",
+                "from": "P.3",
+                "to": "PID.3",
+                "required": true
+              },
+              {
+                "op": "copy",
+                "from": "O.3",
+                "to": "OBR.3",
+                "required": true
+              },
+              {
+                "op": "for_each",
+                "over": "R",
+                "into": "OBX",
+                "rules": [
+                  {
+                    "op": "sequence",
+                    "to": "$.1"
+                  },
+                  {
+                    "op": "constant",
+                    "value": "NM",
+                    "to": "$.2"
+                  },
+                  {
+                    "op": "lookup",
+                    "from": "$.3.4",
+                    "table": "tests",
+                    "to": "$.3",
+                    "on_missing": "error"
+                  },
+                  {
+                    "op": "copy",
+                    "from": "$.4",
+                    "to": "$.5",
+                    "required": true
+                  },
+                  {
+                    "op": "copy",
+                    "from": "$.5",
+                    "to": "$.6"
+                  },
+                  {
+                    "op": "constant",
+                    "value": "F",
+                    "to": "$.11"
+                  }
+                ]
+              }
+            ]
+          },
+          "delivery": {
+            "max_attempts": 5,
+            "ack_required": "accepted",
+            "ack_timeout_seconds": 30,
+            "retry_unacknowledged": false
+          }
+        }
+      ],
+      "retention": {
+        "max_age_days": 90,
+        "max_messages": null
+      }
+    }
+  ]
+}

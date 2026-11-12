@@ -1,0 +1,61 @@
+/* The form: fields side by side, wrapping on a narrow window. */
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.channel {
+  flex: 1 1 22rem;
+  max-width: 36rem;
+  min-width: 0;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.hash {
+  font-family: var(--font-family-mono);
+}
+
+/* A grid that takes the page's width and a height of its own; the page scrolls around it. */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.totals {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.totals th,
+.totals td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.totals th {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+}
+
+.totals tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.totals [data-align="end"] {
+  text-align: end;
+}

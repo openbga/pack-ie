@@ -1,0 +1,184 @@
+/* Its own stacking context, so its sticky header row stays inside the grid. */
+.grid {
+  position: relative;
+  isolation: isolate;
+  max-height: 70vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The main grid of a list page takes the remaining height, but never less than a few rows. */
+.grid[data-fill] {
+  flex: 1 1 0;
+  min-height: calc(8 * var(--control-height));
+  max-height: none;
+}
+
+/* The rows shown are the previous answer while a new one loads: still readable, visibly stale. */
+.grid[data-busy] {
+  opacity: 0.6;
+}
+
+/* The minimum width comes from the column layout, inline. */
+.headerRow,
+.row {
+  display: grid;
+  height: var(--control-height);
+}
+
+.row[data-wrap] {
+  height: auto;
+  min-height: var(--control-height);
+}
+
+.headerRow {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  border-bottom: 1px solid var(--color-border-control);
+  background: var(--color-surface-sunken);
+}
+
+.body {
+  position: relative;
+}
+
+/* Opaque, so the sticky actions cell (which inherits it) hides the cells scrolling under it. */
+.row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.row:hover {
+  background: var(--color-surface-hover);
+}
+
+.grid[data-opens] .row {
+  cursor: pointer;
+}
+
+/* The open row, and selected rows: a tint, and a bar on the left edge so the shape marks it too. */
+.row[aria-current="true"],
+.row[aria-selected="true"] {
+  background: var(--color-accent-subtle);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.headerCell,
+.checkCell,
+.actionsCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: 0 var(--space-2);
+  overflow: hidden;
+}
+
+.headerCell[data-align="end"] {
+  justify-content: flex-end;
+}
+
+/* `text-overflow` needs a block box, so data cells are blocks, centred by line height. */
+.cell {
+  min-width: 0;
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: calc(var(--control-height) - 1px);
+}
+
+.cell > * {
+  vertical-align: middle;
+}
+
+.cell[data-align="end"] {
+  text-align: end;
+}
+
+/* The first line sits where a one-line cell's text does; further lines grow the row. */
+.cell[data-wrap] {
+  padding-block: calc((var(--control-height) - 1px - var(--line-height) * 1em) / 2);
+  line-height: var(--line-height);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Styled as a link, so it is visible that rows open; the row itself opens on a click. */
+.cell[data-identifier] {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.cell[data-zero] {
+  color: var(--color-text-muted);
+}
+
+.headerText {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.headerCell {
+  font-weight: var(--font-weight-semibold);
+}
+
+.headerCell[data-sortable] {
+  cursor: pointer;
+}
+
+.headerCell:focus-visible,
+.checkCell:focus-visible,
+.actionsCell:focus-visible,
+.cell:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.sortIcon {
+  width: var(--font-size-sm);
+  height: var(--font-size-sm);
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.sortIcon[data-active="true"] {
+  color: var(--color-text);
+}
+
+.actionsCell {
+  justify-content: center;
+}
+
+/*
+ * The row actions column stays in view when the grid scrolls sideways: sticky at the inline
+ * end, on the row's own background (plain, hover, open or selected), behind a divider.
+ */
+.actionsEnd {
+  position: sticky;
+  inset-inline-end: 0;
+  border-inline-start: 1px solid var(--color-border);
+  background: inherit;
+}
+
+.selectionBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+}
+
+.selectionCount {
+  color: var(--color-text-muted);
+}

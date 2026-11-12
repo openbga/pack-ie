@@ -1,0 +1,17 @@
+[package]
+name = "packie-au"
+description = "Pure configurable Olympus AU400/AU640 fixed-width protocol codec and receive driver"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+
+[lints]
+workspace = true

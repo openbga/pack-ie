@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "name": "bridge-receiver-then-sender",
+  "description": "Under receiver_then_sender the wait for the receiver is unbounded and records no failure, the sender-side listener is bound only while the receiver is attached, and the second leg is bounded by the pairing timeout.",
+  "requirements": ["BRG-02", "EPT-02"],
+  "timeout_ms": 40000,
+  "resources": { "ports": ["a", "b"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "recv-side", "label": "Receiver (instrument)", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.a}" } },
+        { "endpoint_id": "send-side", "label": "Sender (system)", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.b}" } }
+      ],
+      "channels": [
+        { "channel_id": "bridge-rts", "label": "Receiver then sender", "kind": "bridge",
+          "endpoint_a": "recv-side", "endpoint_b": "send-side",
+          "connection": { "connect_strategy": "receiver_then_sender", "receiver": "a", "pairing_timeout_ms": 1500 },
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "tcp_client" },
+    "sys": { "kind": "tcp_client" }
+  },
+  "steps": [
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-rts" },
+      "expect": { "state": "starting", "session_state": "waiting_for_peer", "receiver": "a",
+                  "endpoint_a.state": "listening", "endpoint_b.state": "disconnected" } },
+    { "do": "connect", "actor": "sys", "host": "127.0.0.1", "port": "${port.b}", "expect": "refused",
+      "note": "the sender-side listener is not bound before the receiver attaches" },
+
+    { "do": "wait", "actor": "engine", "ms": 2500, "note": "longer than pairing_timeout_ms: the receiver wait is unbounded" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-rts" }, "within_ms": 0,
+      "expect": { "state": "starting", "retry_count": 0, "endpoint_a.consecutive_failure_count": 0, "endpoint_b.consecutive_failure_count": 0,
+                  "last_error_summary": null } },
+    { "do": "assert_alert", "actor": "engine", "code": "endpoint_down", "present": false },
+
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.a}" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-rts" },
+      "expect": { "endpoint_b.state": "listening", "session_state": "waiting_for_peer" } },
+    { "do": "connect", "actor": "sys", "host": "127.0.0.1", "port": "${port.b}" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-rts" },
+      "expect": { "state": "running", "session_state": "bridged" } },
+    { "do": "send", "actor": "inst", "text": "from-instrument\n" },
+    { "do": "expect", "actor": "sys", "text": "from-instrument\n" },
+    { "do": "send", "actor": "sys", "text": "from-system\n" },
+    { "do": "expect", "actor": "inst", "text": "from-system\n" },
+
+    { "do": "close", "actor": "sys" },
+    { "do": "expect_closed", "actor": "inst" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-rts" },
+      "expect": { "state": "retrying", "endpoint_a.state": "listening", "endpoint_b.state": "disconnected" } },
+
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.a}", "note": "the receiver attaches again, the sender never does" },
+    { "do": "expect_closed", "actor": "inst", "timeout_ms": 6000 },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-rts" }, "within_ms": 3000,
+      "expect": { "state": "retrying", "retry_count": { "gte": 1 },
+                  "endpoint_b.consecutive_failure_count": { "gte": 1 },
+                  "last_error_summary": { "contains": "pairing timeout" } } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-rts" }, "within_ms": 0,
+      "expect": { "endpoint_a.consecutive_failure_count": 0 } }
+  ]
+}

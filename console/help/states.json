@@ -1,0 +1,26 @@
+{
+  "id": "states",
+  "title": "States",
+  "summary": "What the shapes, words and colours of channels and endpoints mean.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "Channels",
+      "paragraphs": [
+        "Running (filled circle) is working. Starting (spinner). Retrying (circular arrow) means an endpoint is down and the engine tries again; the next attempt counts down. Degraded (triangle) is running but impaired, for example a full buffer. Paused by operator (pause bars) and Disabled (dash) are intentional and are not failures. Stopped (square) names its reason: configuration invalid, error, replaced by configuration, or engine shutting down."
+      ]
+    },
+    {
+      "title": "Endpoints",
+      "paragraphs": [
+        "Connected (check) and Listening (dotted circle; waiting for a peer is not a failure). Connecting (spinner). Retrying (arrow). Disconnected (dashed circle). Error (cross) needs a fix, such as a permission, credentials or a host key. Disabled (dash). Where a bridge connects the receiver first, an arrow marks the side that receives and the side that sends; a side that is down shows a cross."
+      ]
+    },
+    {
+      "title": "Colours",
+      "paragraphs": [
+        "Colour marks only what needs someone: red for failures, amber for warnings, blue for work in progress; normal states are neutral. Every state also has words and a shape, so colour is never the only signal. For deliveries see Delivery states help; for messages see Messages help."
+      ]
+    }
+  ]
+}

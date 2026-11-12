@@ -1,0 +1,32 @@
+{
+  "id": "connection",
+  "title": "Connection to the engine",
+  "summary": "What the console does when no engine answers, and how it finds one.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "When the engine is not running",
+      "paragraphs": [
+        "The console shows The engine is not running, where it looked and why the last attempt failed. It keeps trying by itself, first after 1 second and then at doubling intervals up to 10 seconds, and carries on as soon as an engine answers. Start the service runs the installed service's start command. That needs administrator rights, so from a normal account it may be refused (on macOS it can start a per-user agent instead): the page shows the command to run in an administrator terminal."
+      ]
+    },
+    {
+      "title": "How the console finds the engine",
+      "paragraphs": [
+        "In this order: a location saved earlier by the console, the PACKIE_IPC variable (a socket path or pipe name), then a bootstrap file. That is the file named by PACKIE_BOOTSTRAP, or else the one the installer wrote (C:\\ProgramData\\Positive ACK on Windows, /Library/Application Support/Positive ACK on macOS, /etc/packie on Linux), or else config/bootstrap.json in the folder the console was started from or the nearest parent that has one. If none is found, set one of the variables or start the console from the engine's folder."
+      ]
+    },
+    {
+      "title": "If the connection drops",
+      "paragraphs": [
+        "After the console has connected once, a lost connection keeps the pages on screen with their last data, dimmed, under a banner that says it is reconnecting. What is shown may be out of date. Closing the console never stops the engine, and the console cannot stop or restart it."
+      ]
+    },
+    {
+      "title": "Who the engine thinks you are",
+      "paragraphs": [
+        "Once connected, the top bar says Signed in as, followed by the computer account the engine reads from the connection. The audit log and the version history record your actions under that account; the console cannot change it and there is no separate login."
+      ]
+    }
+  ]
+}

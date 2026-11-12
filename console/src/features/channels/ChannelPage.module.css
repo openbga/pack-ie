@@ -1,0 +1,11 @@
+/* Counters beside the buffers of a bridge; they stack when the window is narrow. */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.retry {
+  color: var(--color-text-muted);
+}

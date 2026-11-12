@@ -1,0 +1,33 @@
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+/* Rows of the control height: a bar on each, a separator line below it. No animation. */
+.skeleton {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 var(--space-2),
+    var(--color-surface-hover) var(--space-2) calc(var(--control-height) - var(--space-2)),
+    transparent calc(var(--control-height) - var(--space-2)) calc(var(--control-height) - 1px),
+    var(--color-border) calc(var(--control-height) - 1px) var(--control-height)
+  );
+  background-clip: content-box;
+  padding-inline: var(--space-2);
+}

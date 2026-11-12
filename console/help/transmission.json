@@ -1,0 +1,33 @@
+{
+  "id": "transmission",
+  "title": "Transmission report",
+  "summary": "What each destination confirmed for the messages a channel received.",
+  "routes": ["/transmission"],
+  "sections": [
+    {
+      "title": "Running a report",
+      "paragraphs": [
+        "Choose a message channel and a period (the last 24 hours, 7 days or 30 days, or a custom From and To), then select Run report. The report is not run while you change the form. Running it is recorded in the audit log with your account. A link from a channel page opens the form with that channel chosen."
+      ]
+    },
+    {
+      "title": "Reading the result",
+      "paragraphs": [
+        "The totals show, for every destination, how many deliveries were Accepted, Received, Written, not confirmed, Unresolved, Closed or still Pending. Only Accepted means the destination's application took the message; the two levels below it prove less. The grid lists each delivery with the message's control id, content hash, acknowledgement level and code, and the outcome. Show sent hash, attempts and first attempt adds three columns. Compare a sample of rows with what the receiving system shows.",
+        "Show source and versions adds the source endpoint and peer and the configuration and mapping versions each delivery ran under."
+      ]
+    },
+    {
+      "title": "Destination filter and CSV file",
+      "paragraphs": [
+        "Destination narrows the grid and the file, not the totals. Export CSV… saves exactly the rows shown, each with the channel, period and time of the report, the source and the versions. The file holds control ids and hashes, which can point to a patient, but no message content."
+      ]
+    },
+    {
+      "title": "Limits",
+      "paragraphs": [
+        "At most 10,000 deliveries are listed. If there are more, the page says so: the rows stop early, while Messages received and the totals still cover the whole period. A saved file of such a report ends with a line starting # truncated:. Choose a shorter period for every row. A missing sent hash does not prove that nothing was sent."
+      ]
+    }
+  ]
+}

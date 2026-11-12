@@ -1,0 +1,39 @@
+{
+  "id": "messages",
+  "title": "Messages",
+  "summary": "Find stored messages and see how each was handled.",
+  "routes": ["/messages"],
+  "sections": [
+    {
+      "title": "The list",
+      "paragraphs": [
+        "Newest first, last 24 hours until you change the range. Columns: received, channel, direction, message state, delivery summary (a chip per destination, two at most), message type, identifier, patient ID, size. Long names end in an ellipsis and show whole on hover. Narrow windows drop columns from the right (Size, Patient ID, Message type, Direction); Columns brings any back (the list then scrolls sideways) and adds message ID, source peer, configuration version and resent-from. Filtering, sorting and paging happen in the engine."
+      ]
+    },
+    {
+      "title": "Filters",
+      "paragraphs": [
+        "Time range, channels, direction, message state, delivery state, Identifier, Message text (3 characters or more, within the time range) and, under More filters, Message ID (first 8 to 32 hex digits). Quick filters show counts: Needs attention, Queued, Duplicates, Invalid or aborted; they replace the state choices. Unresolved deliveries stay however old, so widen the range to find them.",
+        "Identifier, Message text and Message ID can hold patient data: they are never put in the address or saved. They stay in memory while the console is open, so going to a message and back keeps them; reloading or Clear filters forgets them."
+      ]
+    },
+    {
+      "title": "Message states",
+      "paragraphs": [
+        "Receiving (transfer under way), Received (stored, not processed), Routed (deliveries created), Filtered, Duplicate, Invalid, Aborted (nothing is sent) and Observed (seen on a bridge, never processed)."
+      ]
+    },
+    {
+      "title": "Export",
+      "paragraphs": [
+        "Export… saves every message the current filters select, oldest first, as CSV or JSON lines. The file lists patient identifiers. Tick Include message content only if you need the original messages: the file then holds patient information, so save it to a protected location. Every export is recorded in the audit log."
+      ]
+    },
+    {
+      "title": "Empty list",
+      "paragraphs": [
+        "The page says which: store not available (with the reason), no messages yet, none in the range, or none match. None is an error."
+      ]
+    }
+  ]
+}

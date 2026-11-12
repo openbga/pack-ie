@@ -1,0 +1,115 @@
+# libFuzzer harnesses for the pure codecs (cargo-fuzz). This is its own workspace so the
+# nightly toolchain and the sanitizer flags never touch the engine's build; see README.md.
+
+[package]
+name = "packie-fuzz"
+version = "0.0.0"
+edition = "2024"
+license = "AGPL-3.0-only"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde = "1"
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "io-util"] }
+packie-astm = { path = "../crates/packie-astm" }
+packie-au = { path = "../crates/packie-au" }
+packie-config = { path = "../crates/packie-config" }
+packie-files = { path = "../crates/packie-files" }
+packie-hl7 = { path = "../crates/packie-hl7" }
+packie-ipc = { path = "../crates/packie-ipc" }
+packie-transform = { path = "../crates/packie-transform" }
+
+[workspace]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "hl7_parse_encode"
+path = "fuzz_targets/hl7_parse_encode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "hl7_mllp_decoder"
+path = "fuzz_targets/hl7_mllp_decoder.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "hl7_ack"
+path = "fuzz_targets/hl7_ack.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "astm_frames"
+path = "fuzz_targets/astm_frames.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "astm_receive_driver"
+path = "fuzz_targets/astm_receive_driver.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "astm_link_driver"
+path = "fuzz_targets/astm_link_driver.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "au_frames_and_driver"
+path = "fuzz_targets/au_frames_and_driver.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "files_read"
+path = "fuzz_targets/files_read.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "transform_path"
+path = "fuzz_targets/transform_path.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "transform_compile_apply"
+path = "fuzz_targets/transform_compile_apply.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ipc_frame_decode"
+path = "fuzz_targets/ipc_frame_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "config_parse"
+path = "fuzz_targets/config_parse.rs"
+test = false
+doc = false
+bench = false
+

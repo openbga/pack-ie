@@ -1,0 +1,30 @@
+[package]
+name = "packie-engine"
+description = "Composition root of the Positive ACK engine: configuration, diagnostics, IPC and the channel registry"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+packie-astm = { path = "../packie-astm" }
+packie-backup = { path = "../packie-backup" }
+packie-config = { workspace = true }
+packie-core = { workspace = true }
+packie-diagnostics = { workspace = true }
+packie-hl7 = { path = "../packie-hl7" }
+packie-ipc = { workspace = true }
+packie-notify = { path = "../packie-notify" }
+packie-transform = { path = "../packie-transform" }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

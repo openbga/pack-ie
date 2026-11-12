@@ -1,0 +1,26 @@
+{
+  "id": "alerts",
+  "title": "Alerts",
+  "summary": "Conditions that need an operator.",
+  "routes": ["/alerts"],
+  "sections": [
+    {
+      "title": "What you see",
+      "paragraphs": [
+        "Open alerts come first, the most severe on top, then recently cleared ones. Filter by state and severity, or find one by name, channel or endpoint. Each row shows the severity, what happened with the engine's detail underneath, and straight after it the next step, then the state, the channel or endpoint it concerns (linked), when it began and was last seen as a short date and time (point at it for the whole), and how many times it was raised. On a narrow window Last seen, First seen and Concerns drop first. Opening a row goes to its channel or endpoint."
+      ]
+    },
+    {
+      "title": "Severity",
+      "paragraphs": [
+        "Critical needs action now, for example the message store is unavailable, disk space is nearly gone, an endpoint is in error or has been down for long, many deliveries need attention, or the audit log cannot be written (audited commands are refused meanwhile). Warning also covers backups older than their limit and notifications that fail to send (see Notifications help). Warning needs attention soon. Info is for your information. Thresholds are set in Settings › Engine."
+      ]
+    },
+    {
+      "title": "What clears an alert",
+      "paragraphs": [
+        "An alert cannot be dismissed; it clears by itself when its condition ends: the connection is stable again, a peer connects, a buffer falls below its limit, free disk space recovers, no unresolved delivery remains (resend or close each one), a test message reaches every failing notification target, or a later configuration change applies. Cleared alerts stay listed for 30 days. A paused or disabled channel raises no alert for what the pause causes, such as a backlog."
+      ]
+    }
+  ]
+}

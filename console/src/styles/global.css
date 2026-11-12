@@ -1,0 +1,121 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height);
+  color: var(--color-text);
+  background: var(--color-surface-sunken);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+ol,
+ul {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* The page heading takes focus after each navigation so screen readers announce it; it is not
+   a control, so it shows no ring. */
+h1[tabindex="-1"]:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* One home for tone colors: components set data-tone and read --tone-* below. */
+[data-tone="info"] {
+  --tone-bg: var(--tone-info-bg);
+  --tone-border: var(--tone-info-border);
+  --tone-text: var(--tone-info-text);
+}
+
+[data-tone="success"] {
+  --tone-bg: var(--tone-success-bg);
+  --tone-border: var(--tone-success-border);
+  --tone-text: var(--tone-success-text);
+}
+
+[data-tone="warning"] {
+  --tone-bg: var(--tone-warning-bg);
+  --tone-border: var(--tone-warning-border);
+  --tone-text: var(--tone-warning-text);
+}
+
+[data-tone="danger"] {
+  --tone-bg: var(--tone-danger-bg);
+  --tone-border: var(--tone-danger-border);
+  --tone-text: var(--tone-danger-text);
+  --tone-solid: var(--tone-danger-solid);
+}
+
+[data-tone="hold"] {
+  --tone-bg: var(--tone-hold-bg);
+  --tone-border: var(--tone-hold-border);
+  --tone-text: var(--tone-hold-text);
+  --tone-solid: var(--tone-hold-solid);
+}
+
+[data-tone="neutral"] {
+  --tone-bg: var(--tone-neutral-bg);
+  --tone-border: var(--tone-neutral-border);
+  --tone-text: var(--tone-neutral-text);
+}
+
+/* Transitions use --duration-fast, so this switches all motion off. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0s;
+  }
+}
+
+/* Read by screen readers only: a label or a live-region message with no room on screen. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+a {
+  color: var(--color-accent);
+  /* Keeps the underline clear of digits, so times and identifiers that are links stay legible. */
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}

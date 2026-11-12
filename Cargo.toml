@@ -1,0 +1,108 @@
+# Cargo workspace for the Positive ACK engine.
+# Every directory under crates/ is a member. Member crates reference shared
+# dependencies with `{ workspace = true }`; crate-local additions go in the
+# member's own Cargo.toml. The console's Tauri crate (console/src-tauri) is a
+# separate workspace root.
+
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.97"
+license = "AGPL-3.0-only"
+publish = false
+
+[workspace.dependencies]
+# Internal crates
+packie-core = { path = "crates/packie-core" }
+packie-config = { path = "crates/packie-config" }
+packie-diagnostics = { path = "crates/packie-diagnostics" }
+packie-ipc = { path = "crates/packie-ipc" }
+packie-engine = { path = "crates/packie-engine" }
+packie-transport = { path = "crates/packie-transport" }
+packie-host = { path = "crates/packie-host" }
+packie-routing = { path = "crates/packie-routing" }
+packie-notify = { path = "crates/packie-notify" }
+
+# External crates
+clap = { version = "4.6.7", features = ["derive"] }
+csv = "1.4.0"
+fs4 = { version = "1.1.0", default-features = false, features = ["sync"] }
+interprocess = { version = "2.4.7", features = ["tokio"] }
+jiff = { version = "0.2.39", features = ["serde"] }
+keyring = "4.2.0"
+# SMTP alert e-mail; rustls only (no OpenSSL, no native-tls).
+lettre = { version = "0.11.23", default-features = false, features = ["builder", "smtp-transport", "tokio1", "tokio1-rustls-tls"] }
+notify = "8.2.1"
+nix = { version = "0.31.3", default-features = false, features = ["user"] }
+# Reads secret values from the terminal without echo (`packie secrets set`).
+rpassword = "7.5.4"
+rusqlite = { version = "0.41.1", features = ["bundled"] }
+russh = { version = "0.65.1", default-features = false, features = ["ring"] }
+russh-sftp = "3.0.1"
+rust_decimal = { version = "1.43.0", default-features = false, features = ["std", "serde"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["float_roundtrip"] }
+serde_path_to_error = "0.1.20"
+serialport = { version = "4.10.1", default-features = false }
+socket2 = { version = "0.6.5", features = ["all"] }
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync", "fs", "signal"] }
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+ts-rs = { version = "12.0.1", features = ["no-serde-warnings"] }
+windows-service = "0.8.1"
+winsafe = { version = "0.0.29", features = ["advapi"] }
+# Blocking HTTP client for the alert webhook; rustls only.
+ureq = { version = "3.5.1", default-features = false, features = ["rustls"] }
+uuid = { version = "1.29.0", features = ["v7", "serde"] }
+
+# Dev-only crates
+insta = "1.49.0"
+proptest = "1.12.0"
+tempfile = "3.27.0"
+
+[workspace.lints.rust]
+# deny, not forbid: the simulator's Windows stop needs one audited call
+unsafe_code = "deny"
+unreachable_pub = "warn"
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+# Errors are values: no panicking shortcuts outside tests (clippy.toml allows them in tests).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+# Output goes through `tracing`, never stdout/stderr.
+print_stdout = "deny"
+print_stderr = "deny"
+# Clinical values are exact decimals; floats are never used for them.
+float_arithmetic = "warn"
+float_cmp = "deny"
+# Complexity budgets (thresholds in clippy.toml); CI runs clippy with -D warnings.
+cognitive_complexity = "warn"
+too_many_lines = "warn"
+too_many_arguments = "warn"
+excessive_nesting = "warn"
+large_enum_variant = "warn"
+redundant_clone = "warn"
+needless_collect = "warn"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"

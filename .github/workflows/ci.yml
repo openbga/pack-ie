@@ -1,0 +1,181 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  # Full debug info in ~100 test binaries filled the Ubuntu runner's disk (the linker died
+  # with a bus error); line tables keep backtraces readable at a fraction of the size.
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+
+jobs:
+  rust:
+    name: fmt, clippy, test (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries (serialport needs libudev)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libudev-dev pkg-config
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-ubuntu-latest-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: cargo-ubuntu-latest-
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      # A step timeout below the job's keeps the log of a hanging test (libtest names a test
+      # that runs over 60 s); a cancelled job loses it.
+      - name: Test
+        timeout-minutes: 25
+        run: cargo test --workspace --locked --no-fail-fast
+
+  # fmt is platform independent and runs on ubuntu only. ring and bundled SQLite compile C code,
+  # which the macOS (Xcode) and Windows (MSVC) runner images already provide; serialport uses
+  # IOKit on macOS and needs no system package on Windows.
+  rust-cross:
+    name: clippy, test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-${{ matrix.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: cargo-${{ matrix.os }}-
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Test
+        run: cargo test --workspace --locked --no-fail-fast
+
+  console:
+    name: console (typecheck, lint, test, build, e2e journeys)
+    runs-on: ubuntu-latest
+    # The journeys run against the built console (playwright.config.ts) on a two-core runner.
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: console
+    steps:
+      - uses: actions/checkout@v4
+      # package.json declares no engines and the repo has no .nvmrc. The locked dependencies need
+      # Node >= 22.22 (react-router, vitest, jsdom); 24 is the current LTS line.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      # The journeys of console/e2e (acceptance rows H-01..H-09, D-08, D-12, I-03) run in
+      # Chromium against the Vite dev server and the mock engine; the Tauri window is checked by
+      # hand (console/e2e/MANUAL.md).
+      - name: Browser for the journeys
+        run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - name: Responsiveness journeys, one worker
+        run: npx playwright test --workers 1
+        env:
+          PACKIE_E2E_PERF: "1"
+      - name: Journeys that need the dev server
+        run: npx playwright test --grep @dev-server
+        env:
+          PACKIE_E2E_PREVIEW: "0"
+      - name: Journey traces and screenshots of failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-e2e-results
+          path: console/test-results
+          if-no-files-found: ignore
+
+  tauri:
+    name: console backend (cargo check, clippy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      # Tauri 2 prerequisites for Debian/Ubuntu, plus libudev for the engine crates reached by path.
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev libudev-dev libdbus-1-dev libxdo-dev \
+            libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev libsoup-3.0-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            console/src-tauri/target
+          key: cargo-tauri-ubuntu-${{ hashFiles('console/src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: cargo-tauri-ubuntu-
+      # A debug build reads the dev URL and does not need console/dist, so the frontend is not built.
+      - name: Check
+        working-directory: console/src-tauri
+        run: cargo check --locked
+      - name: Clippy
+        working-directory: console/src-tauri
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+  deny:
+    name: licenses and advisories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      # cargo-deny comes from its release archive, pinned to the version the local gate uses,
+      # so the workflow needs no third-party action.
+      - name: cargo-deny
+        env:
+          CARGO_DENY_VERSION: 0.20.2
+        run: |
+          archive="cargo-deny-${CARGO_DENY_VERSION}-x86_64-unknown-linux-musl"
+          curl -fsSL "https://github.com/EmbarkStudios/cargo-deny/releases/download/${CARGO_DENY_VERSION}/${archive}.tar.gz" \
+            | tar -xz --strip-components=1 -C "$HOME/.cargo/bin" "${archive}/cargo-deny"
+          cargo deny --version
+      - name: Workspace
+        run: cargo deny check
+      - name: Console backend (same policy)
+        run: cargo deny --manifest-path console/src-tauri/Cargo.toml --all-features --config deny.toml check

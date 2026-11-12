@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "name": "msg-astm-interrupted-transfer",
+  "description": "After a crash, startup reconciliation aborts an incomplete ASTM transfer and recovers a transfer whose frames were all committed, then processes the recovered message.",
+  "requirements": ["ENG-05", "MSG-02", "MSG-03", "PRO-01"],
+  "requires": ["test_hooks"],
+  "timeout_ms": 45000,
+  "resources": { "ports": ["astm", "lis"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "astm-in", "label": "Chemistry analyzer", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.astm}" } },
+        { "endpoint_id": "lis-out", "label": "LIS ASTM interface (down)", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${port.lis}", "connect_timeout_ms": 500 } }
+      ],
+      "channels": [
+        { "channel_id": "astm-results", "label": "ASTM results", "kind": "message",
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 },
+          "source": { "endpoint": "astm-in", "protocol": "astm", "settings": {} },
+          "destinations": [
+            { "destination_id": "lis", "label": "LIS", "endpoint": "lis-out", "protocol": "astm", "settings": {}, "mapping": null }
+          ] }
+      ]
+    }
+  },
+  "actors": { "inst": { "kind": "tcp_client" } },
+  "no_body_leak": ["PID-TEST-001", "TEST^PATIENT"],
+  "steps": [
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.astm}" },
+    { "do": "send_message", "actor": "inst", "protocol": "astm", "partial": { "frames": 2 },
+      "records": [
+        "H|\\^&|||SIM^1.0|||||||P|1|20260101120000",
+        "P|1|PID-TEST-001|||TEST^PATIENT||19700101|F",
+        "O|1|SID-0001||^^^GLU|R",
+        "R|1|^^^GLU|95|mg/dL||N||F||||20260101115900",
+        "L|1|N"
+      ] },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "astm-results", "state": "receiving" }, "count": 1 },
+    { "do": "crash_engine", "actor": "engine" },
+    { "do": "expect_closed", "actor": "inst" },
+
+    { "do": "start_engine", "actor": "engine" },
+    { "do": "assert_log", "actor": "engine", "event": "reconciliation.completed", "fields": { "recovered": 0, "aborted": 1, "unknown": 0 }, "count": 1 },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "astm-results", "state": "aborted" }, "count": 1,
+      "each": { "abort_reason": "startup_interrupted" } },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "channel_id": "astm-results" }, "count": 0, "within_ms": 0 },
+
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.astm}" },
+    { "do": "send_message", "actor": "inst", "protocol": "astm", "partial": { "omit_eot": true },
+      "records": [
+        "H|\\^&|||SIM^1.0|||||||P|1|20260101120000",
+        "P|1|PID-TEST-001|||TEST^PATIENT||19700101|F",
+        "O|1|SID-0001||^^^GLU|R",
+        "R|1|^^^GLU|95|mg/dL||N||F||||20260101115900",
+        "L|1|N"
+      ] },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "astm-results", "state": "receiving" }, "count": 1 },
+    { "do": "crash_engine", "actor": "engine" },
+    { "do": "expect_closed", "actor": "inst" },
+
+    { "do": "start_engine", "actor": "engine" },
+    { "do": "assert_log", "actor": "engine", "event": "reconciliation.completed", "fields": { "recovered": 1, "aborted": 0 }, "count": 1 },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "astm-results", "state": "routed" }, "count": 1,
+      "each": { "sample_id": "SID-0001", "patient_id": "PID-TEST-001" } },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "astm-results", "state": "aborted" }, "count": 1 },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "channel_id": "astm-results" }, "count": 1, "each": { "state": "queued" } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "astm-results" },
+      "expect": { "destinations[destination_id=lis].queue.queued": 1 } }
+  ]
+}

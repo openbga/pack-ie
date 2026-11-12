@@ -1,0 +1,135 @@
+.note {
+  color: var(--color-text-muted);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.count {
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend,
+.limit {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* The transcript scrolls inside the page, so the page itself keeps its place. */
+.log {
+  max-block-size: calc(20 * var(--control-height));
+  min-block-size: calc(6 * var(--control-height));
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  user-select: text;
+}
+
+.waiting {
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.segment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.time,
+.size {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.direction {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* The destination a segment belongs to; a label in its own right, never colour alone. */
+.tag {
+  padding-inline: var(--space-2);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+}
+
+.line {
+  display: grid;
+  grid-template-columns: var(--space-8) minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.line[data-muted] {
+  color: var(--color-text-muted);
+}
+
+.kind {
+  color: var(--color-text-muted);
+  user-select: none;
+}
+
+.content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Two panes side by side when there is room, stacked when not. */
+.panes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.paneHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.paneTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* The display is held while the transcript goes on capturing. */
+.log[data-frozen] {
+  border-style: dashed;
+}
+
+.frozen {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}

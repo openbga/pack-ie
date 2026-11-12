@@ -1,0 +1,50 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.group[data-variant="collection"] {
+  flex: none;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.toolbar > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.hint {
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.count {
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.filters[hidden] {
+  display: none;
+}
+
+.toolbar[data-align="end"] {
+  align-items: flex-end;
+}

@@ -1,0 +1,121 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 100%;
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+.page[data-layout="collection"] {
+  gap: var(--space-2);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.titleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.25;
+}
+
+.description {
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.crumbLink {
+  border-radius: var(--radius-sm);
+}
+
+.crumbLink[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* The current page is plain text, not a link to itself. */
+.crumbLink[aria-current] {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  color: var(--color-text-muted);
+}
+
+.sequence {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Native links styled as buttons; the button's own states come from react-aria attributes. */
+.sequenceLink {
+  text-decoration: none;
+}
+
+.sequenceLink:hover {
+  background: var(--color-surface-hover);
+}
+
+.sequenceLink[aria-disabled="true"] {
+  background: var(--color-surface);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.page[data-layout="collection"] > .header {
+  margin-bottom: var(--space-1);
+}

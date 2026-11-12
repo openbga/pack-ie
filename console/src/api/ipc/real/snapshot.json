@@ -1,0 +1,196 @@
+{
+  "node": {
+    "node_id": "node-1",
+    "display_name": "Test node",
+    "version": "0.1.0",
+    "hosting_mode": "console",
+    "started_at": "2026-11-06T20:05:44.582885000Z",
+    "captured_at": "2026-11-06T20:09:10.670844000Z",
+    "uptime_seconds": 206,
+    "node_state": "healthy",
+    "config": {
+      "active_version": 1,
+      "pending_version": null,
+      "last_apply": {
+        "at": "2026-11-06T20:05:50.961487000Z",
+        "result": "applied"
+      }
+    },
+    "channel_counts": {
+      "starting": 0,
+      "running": 1,
+      "retrying": 0,
+      "degraded": 0,
+      "stopped": 0
+    },
+    "endpoint_counts": {
+      "disabled": 0,
+      "connecting": 0,
+      "listening": 0,
+      "connected": 2,
+      "retrying": 0,
+      "disconnected": 0,
+      "error": 0
+    },
+    "totals": {
+      "bytes_in": 6894,
+      "bytes_out": 6894,
+      "messages_stored": null,
+      "deliveries_unresolved": null,
+      "deliveries_queued": null,
+      "alerts_active": {
+        "warning": 0,
+        "critical": 0
+      }
+    },
+    "store": {
+      "state": "not_configured",
+      "size_bytes": null,
+      "free_disk_bytes": 349973340160
+    }
+  },
+  "channels": [
+    {
+      "channel_id": "bridge-1",
+      "label": "Instrument to system",
+      "kind": "bridge",
+      "enabled": true,
+      "state": "running",
+      "stop_reason": null,
+      "state_since": "2026-11-06T20:05:52.511876000Z",
+      "config_version": 1,
+      "instance_started_at": "2026-11-06T20:05:50.961381000Z",
+      "endpoints": ["inst-side", "sys-side"],
+      "traffic": {
+        "bytes_in": 3447,
+        "bytes_out": 3447,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 1,
+        "last_activity": "2026-11-06T20:09:10.386000000Z"
+      },
+      "retry_count": 0,
+      "next_retry_at": null,
+      "last_error": {
+        "at": "2026-11-06T20:05:50.962231000Z",
+        "summary": "Channel bridge-1 endpoint B \"System side (client)\" connect failed: connection refused.",
+        "next_action": "Retrying in 500 ms."
+      },
+      "recent_errors": [
+        {
+          "at": "2026-11-06T20:05:50.962231000Z",
+          "summary": "Channel bridge-1 endpoint B \"System side (client)\" connect failed: connection refused.",
+          "next_action": "Retrying in 500 ms."
+        }
+      ],
+      "allowed_actions": ["pause", "restart"],
+      "bridge": {
+        "session": "bridged",
+        "session_since": "2026-11-06T20:05:52.511875000Z",
+        "connect_strategy": "parallel",
+        "receiver": null,
+        "endpoint_a": {
+          "endpoint_id": "inst-side",
+          "label": "Instrument side (listener)",
+          "kind": "tcp_listener",
+          "role": "a",
+          "state": "connected",
+          "consecutive_failures": 0,
+          "active_peer": "127.0.0.1:52386",
+          "last_activity": "2026-11-06T20:09:10.386000000Z"
+        },
+        "endpoint_b": {
+          "endpoint_id": "sys-side",
+          "label": "System side (client)",
+          "kind": "tcp_client",
+          "role": "b",
+          "state": "connected",
+          "consecutive_failures": 0,
+          "active_peer": "127.0.0.1:5302",
+          "last_activity": "2026-11-06T20:09:10.386000000Z"
+        },
+        "a_to_b": {
+          "bytes": 3447,
+          "messages": null,
+          "buffered_segments": 0,
+          "buffered_bytes": 0,
+          "max_segments": 1000,
+          "max_bytes": 10485760,
+          "overflowing": false,
+          "overflow_count": 0
+        },
+        "b_to_a": {
+          "bytes": 3447,
+          "messages": null,
+          "buffered_segments": 0,
+          "buffered_bytes": 0,
+          "max_segments": 1000,
+          "max_bytes": 10485760,
+          "overflowing": false,
+          "overflow_count": 0
+        },
+        "tap": {
+          "framer": "none",
+          "record_messages": false,
+          "framing_errors": null,
+          "tap_dropped": null,
+          "transcript_viewers": 0
+        }
+      },
+      "message": null
+    }
+  ],
+  "endpoints": [
+    {
+      "endpoint_id": "inst-side",
+      "label": "Instrument side (listener)",
+      "kind": "tcp_listener",
+      "enabled": true,
+      "state": "connected",
+      "state_since": "2026-11-06T20:05:52.511671000Z",
+      "peer": "127.0.0.1:52386",
+      "held_by": "bridge-1",
+      "settings_summary": "127.0.0.1:5301",
+      "consecutive_failures": 0,
+      "retry_count": 0,
+      "next_retry_at": null,
+      "traffic": {
+        "bytes_in": 3447,
+        "bytes_out": 3447,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 0,
+        "last_activity": "2026-11-06T20:09:10.386000000Z"
+      },
+      "last_error": null,
+      "rejections": null,
+      "channels": ["bridge-1"]
+    },
+    {
+      "endpoint_id": "sys-side",
+      "label": "System side (client)",
+      "kind": "tcp_client",
+      "enabled": true,
+      "state": "connected",
+      "state_since": "2026-11-06T20:05:51.465347000Z",
+      "peer": "127.0.0.1:5302",
+      "held_by": null,
+      "settings_summary": "127.0.0.1:5302",
+      "consecutive_failures": 0,
+      "retry_count": 0,
+      "next_retry_at": null,
+      "traffic": {
+        "bytes_in": 3447,
+        "bytes_out": 3447,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 1,
+        "last_activity": "2026-11-06T20:09:10.386000000Z"
+      },
+      "last_error": null,
+      "rejections": null,
+      "channels": ["bridge-1"]
+    }
+  ],
+  "alerts": []
+}

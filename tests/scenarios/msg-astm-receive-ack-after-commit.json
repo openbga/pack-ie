@@ -1,0 +1,75 @@
+{
+  "format": 1,
+  "name": "msg-astm-receive-ack-after-commit",
+  "description": "An ASTM transfer is stored before any frame is acknowledged: with store commits held no frame ACK is sent, and once released the message is committed, routed and delivered to a destination.",
+  "requirements": ["MSG-01", "MSG-02", "MSG-03", "PRO-01", "LOG-02"],
+  "requires": ["test_hooks"],
+  "timeout_ms": 30000,
+  "resources": { "ports": ["astm"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "astm-in", "label": "Chemistry analyzer", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.astm}" } },
+        { "endpoint_id": "lis-out", "label": "LIS ASTM interface", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.lis.port}" } }
+      ],
+      "channels": [
+        { "channel_id": "astm-results", "label": "ASTM results", "kind": "message",
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 },
+          "source": { "endpoint": "astm-in", "protocol": "astm", "settings": {} },
+          "destinations": [
+            { "destination_id": "lis", "label": "LIS", "endpoint": "lis-out", "protocol": "astm", "settings": {},
+              "mapping": null,
+              "delivery": { "max_attempts": 3, "send_timeout_seconds": 5, "ack_timeout_seconds": 5,
+                            "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0 } } }
+          ] }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "tcp_client" },
+    "lis": { "kind": "tcp_server" }
+  },
+  "no_body_leak": ["PID-TEST-001", "TEST^PATIENT"],
+  "steps": [
+    { "do": "accept", "actor": "lis" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "astm-results" },
+      "expect": { "state": "running", "source.endpoint.state": "listening", "destinations[destination_id=lis].endpoint.state": "connected" } },
+
+    { "do": "hold_store_commits", "actor": "engine" },
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.astm}" },
+    { "do": "send_message", "actor": "inst", "protocol": "astm", "async": true, "name": "xfer", "reply_timeout_ms": 5000,
+      "records": [
+        "H|\\^&|||SIM^1.0|||||||P|1|20260101120000",
+        "P|1|PID-TEST-001|||TEST^PATIENT||19700101|F",
+        "O|1|SID-0001||^^^GLU|R",
+        "R|1|^^^GLU|95|mg/dL||N||F||||20260101115900",
+        "L|1|N"
+      ] },
+    { "do": "await_send", "actor": "inst", "name": "xfer", "expect": "pending", "for_ms": 800,
+      "note": "the first frame is not acknowledged while its commit is held" },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "astm-results" }, "count": 0, "within_ms": 0 },
+
+    { "do": "release_store_commits", "actor": "engine" },
+    { "do": "await_send", "actor": "inst", "name": "xfer", "timeout_ms": 5000 },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "astm-results" }, "count": 1,
+      "each": { "state": "routed", "protocol": "astm", "sample_id": "SID-0001", "patient_id": "PID-TEST-001",
+                "source_identity": "SIM^1.0|20260101120000|SID-0001", "byte_length": { "gt": 0 }, "committed_at": { "exists": true } } },
+
+    { "do": "expect_message", "actor": "lis", "protocol": "astm", "reply": "ack",
+      "assert": [ { "path": "R.4", "equals": "95" }, { "path": "O.3", "equals": "SID-0001" }, { "path": "P.3", "equals": "PID-TEST-001" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "channel_id": "astm-results", "destination_id": "lis" }, "count": 1,
+      "each": { "state": "acknowledged", "ack_level": "received", "total_attempts": 1 } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "astm-results" },
+      "expect": {
+        "state": "running",
+        "counters.received": 1,
+        "unresolved.failed": 0,
+        "destinations[destination_id=lis].counters.acknowledged": 1,
+        "destinations[destination_id=lis].queue.queued": 0
+      } },
+    { "do": "assert_log", "actor": "engine", "event": "message.committed", "fields": { "channel_id": "astm-results" } }
+  ]
+}

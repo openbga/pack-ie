@@ -1,0 +1,11 @@
+# No reply to a frame within the reply timeout: EOT returns the line to neutral and the message is abandoned.
+record H|\^&|||PACKIE^1.0
+submit
+expect write ENQ
+expect timer 15
+peer ACK
+expect frame 1 final H|\^&|||PACKIE^1.0<CR>
+expect timer 15
+tick
+expect write EOT
+expect send_aborted reply_timeout

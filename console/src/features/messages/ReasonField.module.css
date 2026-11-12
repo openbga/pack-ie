@@ -1,0 +1,8 @@
+/* The shared control is a single line; a reason takes several. */
+.area {
+  align-items: flex-start;
+  min-height: calc(var(--control-height) * 2);
+  padding: var(--space-2);
+  font: inherit;
+  resize: vertical;
+}

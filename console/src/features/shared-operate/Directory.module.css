@@ -1,0 +1,7 @@
+/* Holds the grid, whose width the columns are fitted to; it fills the page like the grid does. */
+.frame {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}

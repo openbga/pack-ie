@@ -1,0 +1,14 @@
+# The peer stays busy for every ENQ attempt: the message is abandoned without any frame.
+option max_enq_attempts 2
+record H|\^&|||PACKIE^1.0
+submit
+expect write ENQ
+expect timer 15
+peer NAK
+expect timer 10
+tick
+expect write ENQ
+expect timer 15
+peer NAK
+expect stop_timer
+expect send_aborted establishment_failed

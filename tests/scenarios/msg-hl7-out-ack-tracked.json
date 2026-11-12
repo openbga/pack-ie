@@ -1,0 +1,95 @@
+{
+  "format": 1,
+  "name": "msg-hl7-out-ack-tracked",
+  "description": "Delimited files are read, mapped and sent as HL7 over MLLP; the partner's answers are tracked per delivery as acknowledged, rejected, timed out and outcome unknown.",
+  "requirements": ["MSG-01", "MSG-03", "MSG-04", "MSG-07", "PRO-03", "PRO-04", "LOG-03"],
+  "timeout_ms": 45000,
+  "resources": { "folders": ["in"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "in-dir", "label": "Result files in", "kind": "folder",
+          "settings": { "path": "${folder.in}", "mode": "poll", "poll_interval_seconds": 1, "stable_seconds": 0 } },
+        { "endpoint_id": "lis-out", "label": "LIS HL7 interface", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.lis.port}" } }
+      ],
+      "channels": [
+        { "channel_id": "file-to-hl7", "label": "Files to HL7", "kind": "message",
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 },
+          "source": { "endpoint": "in-dir", "protocol": "delimited_file",
+            "settings": { "header_row": true, "record_mode": "one_per_line",
+              "columns": [ { "name": "sample_id" }, { "name": "patient_id" }, { "name": "test_code" }, { "name": "value", "type": "decimal" } ] } },
+          "destinations": [
+            { "destination_id": "lis", "label": "LIS", "endpoint": "lis-out", "protocol": "hl7_mllp",
+              "settings": { "ack_mode": "original", "sending_application": "PACKIE", "receiving_application": "LIS" },
+              "mapping": { "rules": [
+                { "op": "constant", "value": "ORU^R01", "to": "MSH.9" },
+                { "op": "copy", "from": "col.patient_id", "to": "PID.3" },
+                { "op": "copy", "from": "col.sample_id", "to": "OBR.3" },
+                { "op": "constant", "value": "1", "to": "OBX.1" },
+                { "op": "constant", "value": "NM", "to": "OBX.2" },
+                { "op": "copy", "from": "col.test_code", "to": "OBX.3" },
+                { "op": "copy", "from": "col.value", "to": "OBX.5" }
+              ] },
+              "delivery": { "max_attempts": 3, "send_timeout_seconds": 5, "ack_timeout_seconds": 1,
+                            "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0 } } }
+          ] }
+      ]
+    }
+  },
+  "actors": {
+    "lis": { "kind": "tcp_server" },
+    "drop": { "kind": "folder", "resource": "in" }
+  },
+  "no_body_leak": ["PID-TEST-101", "PID-TEST-102", "PID-TEST-103", "PID-TEST-104"],
+  "steps": [
+    { "do": "accept", "actor": "lis" },
+    { "do": "write_file", "actor": "drop", "name": "1.csv", "text": "sample_id,patient_id,test_code,value\r\nSID-OUT-1,PID-TEST-101,GLU,91\r\n" },
+    { "do": "write_file", "actor": "drop", "name": "2.csv", "text": "sample_id,patient_id,test_code,value\r\nSID-OUT-2,PID-TEST-102,GLU,92\r\n" },
+    { "do": "write_file", "actor": "drop", "name": "3.csv", "text": "sample_id,patient_id,test_code,value\r\nSID-OUT-3,PID-TEST-103,GLU,93\r\n" },
+    { "do": "write_file", "actor": "drop", "name": "4.csv", "text": "sample_id,patient_id,test_code,value\r\nSID-OUT-4,PID-TEST-104,GLU,94\r\n" },
+
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA", "timeout_ms": 10000,
+      "assert": [ { "path": "MSH.9", "equals": "ORU^R01" }, { "path": "OBR.3", "equals": "SID-OUT-1" }, { "path": "OBX.5", "equals": "91" },
+                  { "path": "MSH.10", "exists": true } ] },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AR",
+      "assert": [ { "path": "OBR.3", "equals": "SID-OUT-2" } ] },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "none",
+      "assert": [ { "path": "OBR.3", "equals": "SID-OUT-3" } ] },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "none", "timeout_ms": 8000,
+      "assert": [ { "path": "OBR.3", "equals": "SID-OUT-4" } ] },
+    { "do": "close", "actor": "lis" },
+
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.sample_id": "SID-OUT-1" }, "count": 1, "within_ms": 10000,
+      "each": { "state": "acknowledged", "ack_level": "accepted", "attempts": 1 } },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.sample_id": "SID-OUT-2" }, "count": 1, "within_ms": 10000,
+      "each": { "state": "rejected", "ack_level": "none", "attempts": 1 } },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.sample_id": "SID-OUT-3" }, "count": 1, "within_ms": 10000,
+      "each": { "state": "timed_out", "ack_level": "none", "attempts": 1 } },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.sample_id": "SID-OUT-4" }, "count": 1, "within_ms": 10000,
+      "each": { "state": "outcome_unknown", "attempts": 1 } },
+    { "do": "assert_store", "actor": "engine", "table": "attempts", "where": { "message.sample_id": "SID-OUT-1" }, "count": 1,
+      "each": { "result": "acknowledged", "ack_code": "AA" } },
+    { "do": "assert_store", "actor": "engine", "table": "attempts", "where": { "message.sample_id": "SID-OUT-2" }, "count": 1,
+      "each": { "result": "rejected", "ack_code": "AR" } },
+    { "do": "assert_store", "actor": "engine", "table": "attempts", "where": { "message.sample_id": "SID-OUT-3" }, "count": 1,
+      "each": { "result": "ack_timeout" } },
+    { "do": "assert_store", "actor": "engine", "table": "attempts", "where": { "message.sample_id": "SID-OUT-4" }, "count": 1,
+      "each": { "result": "connection_lost_after_send" } },
+
+    { "do": "assert_alert", "actor": "engine", "code": "delivery_needs_attention", "scope": { "channel": "file-to-hl7", "destination": "lis" },
+      "expect": { "severity": "warning", "details.count": 3, "details.rejected": 1, "details.timed_out": 1, "details.outcome_unknown": 1 } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "file-to-hl7" },
+      "expect": {
+        "destinations[destination_id=lis].counters.acknowledged": 1,
+        "destinations[destination_id=lis].unresolved.rejected": 1,
+        "destinations[destination_id=lis].unresolved.timed_out": 1,
+        "destinations[destination_id=lis].unresolved.outcome_unknown": 1
+      } },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "channel_id": "file-to-hl7" }, "count": 4,
+      "each": { "state": "routed", "protocol": "delimited_file", "message_type": "delimited" } },
+    { "do": "expect_file", "actor": "drop", "name": "processed/1.csv", "contains": ["SID-OUT-1"] },
+    { "do": "expect_no_file", "actor": "drop", "pattern": "*.csv", "for_ms": 500 }
+  ]
+}

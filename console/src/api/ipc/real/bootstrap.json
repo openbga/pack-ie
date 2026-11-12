@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "node": {
+    "node_id": "node-1",
+    "display_name": "Test node",
+    "environment": "dev"
+  },
+  "paths": {
+    "state_directory": "/var/lib/packie",
+    "log_directory": "/var/log/packie"
+  },
+  "hosting": {
+    "shutdown_drain_seconds": 5
+  },
+  "runtime": {
+    "versions_kept": 20
+  },
+  "logging": {
+    "level": "info",
+    "retention_days": 7,
+    "ring_buffer_events": 20000
+  },
+  "diagnostics": {
+    "snapshot_interval_seconds": 1
+  },
+  "secrets": {
+    "provider": "keystore"
+  }
+}

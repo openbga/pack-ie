@@ -1,0 +1,389 @@
+{
+ "format": 1,
+ "name": "msg-order-download-limits",
+ "description": "An HL7 order with 18 tests becomes one ASTM order record whose universal test id repeats 18 times; an order with 19 tests is stored and acknowledged, and its delivery fails with a transform error naming the limit, with nothing sent.",
+ "requirements": [
+  "MSG-07",
+  "MSG-03"
+ ],
+ "timeout_ms": 30000,
+ "resources": {
+  "ports": [
+   "in"
+  ]
+ },
+ "engine": {
+  "runtime": {
+   "schema_version": 1,
+   "endpoints": [
+    {
+     "endpoint_id": "src",
+     "label": "Source",
+     "kind": "tcp_listener",
+     "settings": {
+      "bind_address": "127.0.0.1",
+      "port": "${port.in}"
+     }
+    },
+    {
+     "endpoint_id": "dst",
+     "label": "Destination",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis.port}"
+     }
+    }
+   ],
+   "channels": [
+    {
+     "channel_id": "preset",
+     "label": "HL7 ORM^O01 order to ASTM order download (Access/DxI layout)",
+     "kind": "message",
+     "retry": {
+      "initial_delay_ms": 200,
+      "max_delay_ms": 1000,
+      "multiplier": 2.0,
+      "jitter_percent": 0,
+      "max_consecutive_failures_before_alert": 3
+     },
+     "source": {
+      "endpoint": "src",
+      "protocol": "hl7_mllp",
+      "settings": {
+       "ack_mode": "original"
+      }
+     },
+     "destinations": [
+      {
+       "destination_id": "lis",
+       "label": "LIS",
+       "endpoint": "dst",
+       "protocol": "astm",
+       "settings": {},
+       "mapping": {
+        "require": [
+         {
+          "count": "PID",
+          "max": 1
+         },
+         {
+          "count": "OBR",
+          "min": 1,
+          "max": 18
+         },
+         {
+          "same": "OBR.3.1"
+         },
+         {
+          "same": "OBR.5"
+         },
+         {
+          "same": "ORC.1"
+         },
+         {
+          "same": "OBR.15.1"
+         }
+        ],
+        "tables": {
+         "tests": {},
+         "priority": {
+          "S": "S",
+          "R": "R"
+         },
+         "action": {
+          "NW": "A",
+          "CA": "C"
+         },
+         "specimen_types": {
+          "AMN": "Amniotic",
+          "BLD": "Blood",
+          "CSF": "CSF",
+          "PLAS": "Plasma",
+          "SAL": "Saliva",
+          "SER": "Serum",
+          "SYN": "Synovial",
+          "UR": "Urine"
+         }
+        },
+        "rules": [
+         {
+          "op": "constant",
+          "value": "1",
+          "to": "P.2"
+         },
+         {
+          "op": "copy",
+          "from": "PID.3.1",
+          "to": "P.3"
+         },
+         {
+          "op": "copy",
+          "from": "PID.5",
+          "to": "P.6"
+         },
+         {
+          "op": "copy",
+          "from": "PID.7",
+          "steps": [
+           {
+            "step": "slice",
+            "start": 0,
+            "length": 8
+           }
+          ],
+          "to": "P.8"
+         },
+         {
+          "op": "copy",
+          "from": "PID.8",
+          "to": "P.9"
+         },
+         {
+          "op": "constant",
+          "value": "1",
+          "to": "O.2"
+         },
+         {
+          "op": "copy",
+          "from": "OBR[0].3",
+          "to": "O.3",
+          "required": true
+         },
+         {
+          "op": "for_each",
+          "over": "OBR",
+          "into": "O.5",
+          "mode": "repeat",
+          "rules": [
+           {
+            "op": "copy",
+            "from": "$.4.1",
+            "to": "$.5.4",
+            "required": true
+           },
+           {
+            "op": "lookup",
+            "from": "$.4.1",
+            "table": "tests",
+            "to": "$.5.4",
+            "on_missing": "skip"
+           }
+          ]
+         },
+         {
+          "op": "lookup",
+          "from": "OBR[0].5",
+          "table": "priority",
+          "to": "O.6",
+          "on_missing": "skip"
+         },
+         {
+          "op": "lookup",
+          "from": "ORC[0].1",
+          "table": "action",
+          "to": "O.12",
+          "on_missing": "skip"
+         },
+         {
+          "op": "lookup",
+          "from": "OBR[0].15.1",
+          "table": "specimen_types",
+          "to": "O.16",
+          "on_missing": "skip"
+         }
+        ]
+       },
+       "delivery": {
+        "max_attempts": 3,
+        "send_timeout_seconds": 5,
+        "ack_timeout_seconds": 5,
+        "retry": {
+         "initial_delay_ms": 200,
+         "max_delay_ms": 1000,
+         "multiplier": 2.0,
+         "jitter_percent": 0
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "actors": {
+  "inst": {
+   "kind": "tcp_client"
+  },
+  "lis": {
+   "kind": "tcp_server"
+  }
+ },
+ "no_body_leak": [
+  "PID-TEST-A",
+  "PID-TEST-B",
+  "TEST^ALPHA",
+  "TEST^BRAVO"
+ ],
+ "steps": [
+  {
+   "do": "accept",
+   "actor": "lis"
+  },
+  {
+   "do": "connect",
+   "actor": "inst",
+   "host": "127.0.0.1",
+   "port": "${port.in}"
+  },
+  {
+   "do": "send_message",
+   "actor": "inst",
+   "protocol": "hl7_mllp",
+   "expect_reply": "AA",
+   "segments": [
+    "MSH|^~\\&|LIS|HOSP|PACKIE|LAB|20261012120000||ORM^O01|ORD-18|P|2.5.1",
+    "PID|1||PID-TEST-A||TEST^ALPHA||19800101120000|F",
+    "ORC|NW|PL-1",
+    "OBR|1|PL-1|SPEC1234|T01^Test 1^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-2",
+    "OBR|2|PL-2|SPEC1234|T02^Test 2^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-3",
+    "OBR|3|PL-3|SPEC1234|T03^Test 3^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-4",
+    "OBR|4|PL-4|SPEC1234|T04^Test 4^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-5",
+    "OBR|5|PL-5|SPEC1234|T05^Test 5^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-6",
+    "OBR|6|PL-6|SPEC1234|T06^Test 6^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-7",
+    "OBR|7|PL-7|SPEC1234|T07^Test 7^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-8",
+    "OBR|8|PL-8|SPEC1234|T08^Test 8^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-9",
+    "OBR|9|PL-9|SPEC1234|T09^Test 9^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-10",
+    "OBR|10|PL-10|SPEC1234|T10^Test 10^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-11",
+    "OBR|11|PL-11|SPEC1234|T11^Test 11^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-12",
+    "OBR|12|PL-12|SPEC1234|T12^Test 12^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-13",
+    "OBR|13|PL-13|SPEC1234|T13^Test 13^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-14",
+    "OBR|14|PL-14|SPEC1234|T14^Test 14^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-15",
+    "OBR|15|PL-15|SPEC1234|T15^Test 15^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-16",
+    "OBR|16|PL-16|SPEC1234|T16^Test 16^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-17",
+    "OBR|17|PL-17|SPEC1234|T17^Test 17^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-18",
+    "OBR|18|PL-18|SPEC1234|T18^Test 18^L|S||20261012110000||||||||SER"
+   ]
+  },
+  {
+   "do": "expect_message",
+   "actor": "lis",
+   "protocol": "astm",
+   "reply": "ack",
+   "assert": [
+    {
+     "path": "O[0].3",
+     "equals": "SPEC1234"
+    },
+    {
+     "path": "O[0].5",
+     "equals": "^^^T01\\^^^T02\\^^^T03\\^^^T04\\^^^T05\\^^^T06\\^^^T07\\^^^T08\\^^^T09\\^^^T10\\^^^T11\\^^^T12\\^^^T13\\^^^T14\\^^^T15\\^^^T16\\^^^T17\\^^^T18"
+    },
+    {
+     "path": "O[1].1",
+     "exists": false
+    }
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "message.control_id": "ORD-18"
+   },
+   "count": 1,
+   "each": {
+    "state": "acknowledged",
+    "total_attempts": 1
+   }
+  },
+  {
+   "do": "send_message",
+   "actor": "inst",
+   "protocol": "hl7_mllp",
+   "expect_reply": "AA",
+   "segments": [
+    "MSH|^~\\&|LIS|HOSP|PACKIE|LAB|20261012120000||ORM^O01|ORD-19|P|2.5.1",
+    "PID|1||PID-TEST-A||TEST^ALPHA||19800101120000|F",
+    "ORC|NW|PL-1",
+    "OBR|1|PL-1|SPEC1234|T01^Test 1^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-2",
+    "OBR|2|PL-2|SPEC1234|T02^Test 2^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-3",
+    "OBR|3|PL-3|SPEC1234|T03^Test 3^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-4",
+    "OBR|4|PL-4|SPEC1234|T04^Test 4^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-5",
+    "OBR|5|PL-5|SPEC1234|T05^Test 5^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-6",
+    "OBR|6|PL-6|SPEC1234|T06^Test 6^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-7",
+    "OBR|7|PL-7|SPEC1234|T07^Test 7^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-8",
+    "OBR|8|PL-8|SPEC1234|T08^Test 8^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-9",
+    "OBR|9|PL-9|SPEC1234|T09^Test 9^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-10",
+    "OBR|10|PL-10|SPEC1234|T10^Test 10^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-11",
+    "OBR|11|PL-11|SPEC1234|T11^Test 11^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-12",
+    "OBR|12|PL-12|SPEC1234|T12^Test 12^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-13",
+    "OBR|13|PL-13|SPEC1234|T13^Test 13^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-14",
+    "OBR|14|PL-14|SPEC1234|T14^Test 14^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-15",
+    "OBR|15|PL-15|SPEC1234|T15^Test 15^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-16",
+    "OBR|16|PL-16|SPEC1234|T16^Test 16^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-17",
+    "OBR|17|PL-17|SPEC1234|T17^Test 17^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-18",
+    "OBR|18|PL-18|SPEC1234|T18^Test 18^L|S||20261012110000||||||||SER",
+    "ORC|NW|PL-19",
+    "OBR|19|PL-19|SPEC1234|T19^Test 19^L|S||20261012110000||||||||SER"
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "message.control_id": "ORD-19"
+   },
+   "count": 1,
+   "each": {
+    "state": "failed",
+    "reason_code": "transform_error",
+    "total_attempts": 0,
+    "last_error": {
+     "contains": "the message has 19 occurrences; required 1 to 18"
+    }
+   }
+  },
+  {
+   "do": "expect_no_data",
+   "actor": "lis",
+   "for_ms": 500
+  }
+ ]
+}

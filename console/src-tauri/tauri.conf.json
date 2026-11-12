@@ -1,0 +1,47 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "PACK-IE Console",
+  "version": "0.2.0",
+  "identifier": "org.openbga.positiveack.console",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5174",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "PACK-IE Console",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 640
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+      "freezePrototype": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": false,
+    "publisher": "Positive ACK contributors",
+    "copyright": "Copyright (C) 2026 BGASoft Inc. and OpenBGA contributors",
+    "license": "AGPL-3.0-only",
+    "licenseFile": "../../LICENSE",
+    "category": "Utility",
+    "shortDescription": "Console for the PACK-IE laboratory interface engine.",
+    "longDescription": "Desktop console that attaches to the Positive ACK engine on this computer to watch channels, messages and logs and to edit configuration.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

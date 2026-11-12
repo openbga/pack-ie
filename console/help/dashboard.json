@@ -1,0 +1,29 @@
+{
+  "id": "dashboard",
+  "title": "Dashboard",
+  "summary": "Engine state and every channel, the ones that need someone first.",
+  "routes": ["/dashboard"],
+  "sections": [
+    {
+      "title": "What you see",
+      "paragraphs": [
+        "The strip shows the engine's state, version and uptime; the active (and pending) configuration version; channels by state; open alerts; deliveries that need attention; the message store and free disk; and the connection to the engine, dimmed with the last known state while it reconnects.",
+        "Below is one table of channels, trouble first: critical alert, retrying, degraded, running with a warning or unresolved deliveries, recent traffic, idle, starting, then paused or disabled."
+      ]
+    },
+    {
+      "title": "Reading the table",
+      "paragraphs": [
+        "Endpoints shows both sides of a bridge, or a message channel's source and destinations, each with its state. Traffic shows bytes each way, or what a message channel received and what each destination acknowledged (one figure per destination: the console cannot know all of them acknowledged every message). Last activity, Queue and Retry are as named; a critical alert tints the row and says Critical alert. See States help.",
+        "Narrow windows drop columns from the right (Retry, Last error, Session, Last activity, Traffic, Queue). Rows hold their places while you point at the table."
+      ]
+    },
+    {
+      "title": "What to do",
+      "paragraphs": [
+        "Open a channel to see why it is unhealthy and what the engine does about it. Open alerts and endpoints in trouble are listed below, each with its next step. If the engine is not running, see Connection help.",
+        "A red notice says so when the audit log cannot be written: configuration changes, channel commands, resends and views of message content are refused until it can be; traffic continues. Open the audit log from the notice."
+      ]
+    }
+  ]
+}

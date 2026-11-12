@@ -1,0 +1,22 @@
+# The receiver rejects a frame (for example a checksum error); the identical frame is resent.
+record H|\^&|||PACKIE^1.0
+record L|1|N
+submit
+expect write ENQ
+expect timer 15
+peer ACK
+expect frame 1 final H|\^&|||PACKIE^1.0<CR>
+expect timer 15
+peer NAK
+expect frame 1 final H|\^&|||PACKIE^1.0<CR>
+expect timer 15
+peer NAK
+expect frame 1 final H|\^&|||PACKIE^1.0<CR>
+expect timer 15
+peer ACK
+expect frame 2 final L|1|N<CR>
+expect timer 15
+peer ACK
+expect stop_timer
+expect write EOT
+expect sent

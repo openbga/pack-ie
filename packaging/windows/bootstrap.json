@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "node": {
+    "node_id": "lab-node",
+    "display_name": "Laboratory node",
+    "environment": "prod"
+  },
+  "paths": {
+    "state_directory": "C:\\ProgramData\\Positive ACK\\state",
+    "log_directory": "C:\\ProgramData\\Positive ACK\\logs"
+  },
+  "secrets": {
+    "provider": "keystore"
+  }
+}

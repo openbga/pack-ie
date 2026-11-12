@@ -1,0 +1,28 @@
+/* Layout shared by feature screens:
+   tokens only, no component internals. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.hint {
+  color: var(--color-text-muted);
+}
+
+.code {
+  font-family: var(--font-family-mono);
+  overflow-wrap: anywhere;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: var(--space-5);
+}
+
+.subheading {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}

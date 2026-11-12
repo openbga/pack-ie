@@ -1,0 +1,27 @@
+{
+  "id": "source-requirements",
+  "title": "Source requirements",
+  "summary": "Checks on the message received, before any rule runs.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "Requirements",
+      "paragraphs": [
+        "A destination can require that the message received fits what its rules assume. Number of records counts a record or segment, such as OBR, against a minimum and a maximum. Same value in every record needs every occurrence of a path, such as OBR.3.1, to hold the same text; a missing value counts as empty. Checks run in order before any rule.",
+        "A message that fails a check fails only this destination's mapping with a transform error that names the check and the reason, never the value. It is kept, and nothing is filtered. Fix the message source or the mapping, then resend."
+      ]
+    },
+    {
+      "title": "Several patients or orders",
+      "paragraphs": [
+        "Refuse messages with several patients or orders fails a message that holds more than one patient, order or specimen group. Use it for result conversions with calculations or appended records, which could otherwise place a value under the wrong sample. An order sent to an instrument for one specimen with several orders needs Number of records and Same value checks instead."
+      ]
+    },
+    {
+      "title": "Presets",
+      "paragraphs": [
+        "A mapping preset adds its rules and the requirements they assume after your own. A table you already have under the same name is kept. Replace is a separate choice and the dialog says what goes."
+      ]
+    }
+  ]
+}

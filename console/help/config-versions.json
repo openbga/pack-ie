@@ -1,0 +1,51 @@
+{
+  "id": "config-versions",
+  "title": "Saving and versions",
+  "summary": "Validate, apply, conflicts, rollback and the version history.",
+  "routes": ["/settings/versions"],
+  "sections": [
+    {
+      "title": "Validate and apply",
+      "paragraphs": [
+        "Validate checks with the engine and lists each problem at its field. Errors turn Save and apply off until Validate finds none; warnings do not. Save and apply shows what will change and asks why: a change note of 1 to 500 characters, kept with the version and in the audit log."
+      ]
+    },
+    {
+      "title": "The plan",
+      "paragraphs": [
+        "The confirmation shows the engine's plan: channels that restart, update in place, start or stop, and what stays untouched. If the engine rejects it, nothing is applied and the running configuration stays active. If a channel then fails at run time, the new version is active and that channel keeps its previous definition; the next apply retries it."
+      ]
+    },
+    {
+      "title": "The result",
+      "paragraphs": [
+        "The result lists each channel as updated, restarted, started, stopped, removed or unchanged. A failed channel is shown with its reason until you dismiss it."
+      ]
+    },
+    {
+      "title": "When someone else changed it",
+      "paragraphs": [
+        "If the configuration changed after you opened the page, applying is refused; Reload keeps your entries."
+      ]
+    },
+    {
+      "title": "Version history and rollback",
+      "paragraphs": [
+        "Settings › Versions lists every applied version: who applied it, when, its note, what it did to each channel and whether it was verified. Open one to read its outcomes, endpoints, channels and comparison with the active version: field, active value → this version.",
+        "Roll back applies a version as a new one, after showing the engine's plan and asking for a reason. Mark as verified signs a version off with your reference (1 to 500 characters, such as a validation record number). Otherwise it reads Not verified since change."
+      ]
+    },
+    {
+      "title": "Change report",
+      "paragraphs": [
+        "Export change report… saves a CSV or JSON file of every version, or the open one: account, time, note, outcomes, each field's before and after values, and every verification. Notes can hold patient identifiers: save it somewhere protected. The export is audited."
+      ]
+    },
+    {
+      "title": "Leaving and deleting",
+      "paragraphs": [
+        "An endpoint that channels use cannot be deleted; deleting a channel or destination closes its unresolved deliveries."
+      ]
+    }
+  ]
+}

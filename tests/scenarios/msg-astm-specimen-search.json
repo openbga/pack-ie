@@ -1,0 +1,400 @@
+{
+ "format": 1,
+ "name": "msg-astm-specimen-search",
+ "description": "An ASTM source configured to read the specimen from O.4.3 stores the message with that specimen id and source identity, finds it by the specimen id, and sends the documented ORU.",
+ "requirements": [
+  "MSG-05",
+  "MSG-06",
+  "MSG-07"
+ ],
+ "timeout_ms": 30000,
+ "resources": {
+  "ports": [
+   "in"
+  ]
+ },
+ "engine": {
+  "runtime": {
+   "schema_version": 1,
+   "endpoints": [
+    {
+     "endpoint_id": "src",
+     "label": "Source",
+     "kind": "tcp_listener",
+     "settings": {
+      "bind_address": "127.0.0.1",
+      "port": "${port.in}"
+     }
+    },
+    {
+     "endpoint_id": "dst",
+     "label": "Destination",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis.port}"
+     }
+    }
+   ],
+   "channels": [
+    {
+     "channel_id": "preset",
+     "label": "ASTM results to HL7 ORU^R01 (specimen id in O-4, test code i",
+     "kind": "message",
+     "retry": {
+      "initial_delay_ms": 200,
+      "max_delay_ms": 1000,
+      "multiplier": 2.0,
+      "jitter_percent": 0,
+      "max_consecutive_failures_before_alert": 3
+     },
+     "source": {
+      "endpoint": "src",
+      "protocol": "astm",
+      "settings": {
+       "sample_id_path": "O.4.3"
+      }
+     },
+     "destinations": [
+      {
+       "destination_id": "lis",
+       "label": "LIS",
+       "endpoint": "dst",
+       "protocol": "hl7_mllp",
+       "settings": {
+        "version": "2.5.1",
+        "ack_mode": "original",
+        "sending_application": "PACKIE",
+        "sending_facility": "LAB",
+        "receiving_application": "LIS",
+        "receiving_facility": "HOSP",
+        "processing_id": "P"
+       },
+       "mapping": {
+        "require_single_group": true,
+        "tables": {
+         "tests": {}
+        },
+        "rules": [
+         {
+          "op": "constant",
+          "value": "ORU^R01",
+          "to": "MSH.9"
+         },
+         {
+          "op": "copy",
+          "from": "P.3",
+          "to": "PID.3"
+         },
+         {
+          "op": "copy",
+          "from": "P.6",
+          "to": "PID.5"
+         },
+         {
+          "op": "copy",
+          "from": "P.8",
+          "to": "PID.7"
+         },
+         {
+          "op": "copy",
+          "from": "P.9",
+          "to": "PID.8"
+         },
+         {
+          "op": "copy",
+          "from": "O.4.3",
+          "to": "OBR.3"
+         },
+         {
+          "op": "copy",
+          "from": "O.5.5",
+          "to": "OBR.4.1"
+         },
+         {
+          "op": "copy",
+          "from": "O.8",
+          "to": "OBR.7"
+         },
+         {
+          "op": "for_each",
+          "over": "R",
+          "into": "OBX",
+          "rules": [
+           {
+            "op": "sequence",
+            "to": "$.1"
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.4.1",
+             "op": "matches",
+             "value": "^-?[0-9]*\\.?[0-9]+$"
+            },
+            "then": [
+             {
+              "op": "constant",
+              "value": "NM",
+              "to": "$.2"
+             }
+            ],
+            "else": [
+             {
+              "op": "constant",
+              "value": "ST",
+              "to": "$.2"
+             }
+            ]
+           },
+           {
+            "op": "lookup",
+            "table": "tests",
+            "to": "$.3",
+            "on_missing": "keep",
+            "from": "$.3.5"
+           },
+           {
+            "op": "copy",
+            "from": "$.4.1",
+            "to": "$.5"
+           },
+           {
+            "op": "copy",
+            "from": "$.5",
+            "to": "$.6"
+           },
+           {
+            "op": "copy",
+            "from": "$.7",
+            "to": "$.8"
+           },
+           {
+            "op": "copy",
+            "from": "$.9",
+            "to": "$.11",
+            "default": "F"
+           },
+           {
+            "op": "copy",
+            "from": "$.13",
+            "to": "$.14"
+           },
+           {
+            "op": "copy",
+            "from": "$.11",
+            "to": "$.16"
+           },
+           {
+            "op": "copy",
+            "from": "$.14",
+            "to": "$.18"
+           }
+          ]
+         }
+        ]
+       },
+       "delivery": {
+        "max_attempts": 3,
+        "send_timeout_seconds": 5,
+        "ack_timeout_seconds": 5,
+        "retry": {
+         "initial_delay_ms": 200,
+         "max_delay_ms": 1000,
+         "multiplier": 2.0,
+         "jitter_percent": 0
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "actors": {
+  "inst": {
+   "kind": "tcp_client"
+  },
+  "lis": {
+   "kind": "tcp_server"
+  }
+ },
+ "steps": [
+  {
+   "do": "accept",
+   "actor": "lis"
+  },
+  {
+   "do": "connect",
+   "actor": "inst",
+   "host": "127.0.0.1",
+   "port": "${port.in}"
+  },
+  {
+   "do": "send_message",
+   "actor": "inst",
+   "protocol": "astm",
+   "reply_timeout_ms": 5000,
+   "records": [
+    "H|\\^&|||HEMA-1^1.0|||||||P|LIS2-A2|20261012120000",
+    "P|1||||DOE^JANE||19800101|F",
+    "O|1||^^SYN-0001^B|^^^^WBC|R|20261012110000|20261012113000",
+    "R|1|^^^^WBC^1|6.5|10*3/uL||N||F||OP||20261012115959",
+    "R|2|^^^^FLAG^1|POSITIVE|||||F||OP||20261012120105",
+    "L|1|N"
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "messages",
+   "where": {
+    "sample_id": "SYN-0001"
+   },
+   "count": 1,
+   "each": {
+    "channel_id": "preset",
+    "state": "routed",
+    "source_identity": "HEMA-1^1.0|20261012120000|SYN-0001"
+   },
+   "note": "the message is found by the specimen id read from O.4.3"
+  },
+  {
+   "do": "expect_message",
+   "actor": "lis",
+   "protocol": "hl7_mllp",
+   "reply": "AA",
+   "assert": [
+    {
+     "path": "MSH[0].3",
+     "equals": "PACKIE"
+    },
+    {
+     "path": "MSH[0].4",
+     "equals": "LAB"
+    },
+    {
+     "path": "MSH[0].5",
+     "equals": "LIS"
+    },
+    {
+     "path": "MSH[0].6",
+     "equals": "HOSP"
+    },
+    {
+     "path": "MSH[0].9",
+     "equals": "ORU^R01"
+    },
+    {
+     "path": "MSH[0].11",
+     "equals": "P"
+    },
+    {
+     "path": "MSH[0].12",
+     "equals": "2.5.1"
+    },
+    {
+     "path": "PID[0].5",
+     "equals": "DOE^JANE"
+    },
+    {
+     "path": "PID[0].7",
+     "equals": "19800101"
+    },
+    {
+     "path": "PID[0].8",
+     "equals": "F"
+    },
+    {
+     "path": "OBR[0].3",
+     "equals": "SYN-0001"
+    },
+    {
+     "path": "OBR[0].4",
+     "equals": "WBC"
+    },
+    {
+     "path": "OBR[0].7",
+     "equals": "20261012113000"
+    },
+    {
+     "path": "OBX[0].1",
+     "equals": "1"
+    },
+    {
+     "path": "OBX[0].2",
+     "equals": "NM"
+    },
+    {
+     "path": "OBX[0].3",
+     "equals": "WBC"
+    },
+    {
+     "path": "OBX[0].5",
+     "equals": "6.5"
+    },
+    {
+     "path": "OBX[0].6",
+     "equals": "10*3/uL"
+    },
+    {
+     "path": "OBX[0].8",
+     "equals": "N"
+    },
+    {
+     "path": "OBX[0].11",
+     "equals": "F"
+    },
+    {
+     "path": "OBX[0].14",
+     "equals": "20261012115959"
+    },
+    {
+     "path": "OBX[0].16",
+     "equals": "OP"
+    },
+    {
+     "path": "OBX[1].1",
+     "equals": "2"
+    },
+    {
+     "path": "OBX[1].2",
+     "equals": "ST"
+    },
+    {
+     "path": "OBX[1].3",
+     "equals": "FLAG"
+    },
+    {
+     "path": "OBX[1].5",
+     "equals": "POSITIVE"
+    },
+    {
+     "path": "OBX[1].11",
+     "equals": "F"
+    },
+    {
+     "path": "OBX[1].14",
+     "equals": "20261012120105"
+    },
+    {
+     "path": "OBX[1].16",
+     "equals": "OP"
+    }
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "message.sample_id": "SYN-0001"
+   },
+   "count": 1,
+   "each": {
+    "state": "acknowledged",
+    "total_attempts": 1
+   }
+  }
+ ]
+}

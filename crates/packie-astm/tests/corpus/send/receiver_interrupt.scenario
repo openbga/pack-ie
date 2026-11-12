@@ -1,0 +1,16 @@
+# The receiver answers frame 2 with EOT instead of ACK; the sender stops without writing anything.
+record H|\^&|||PACKIE^1.0
+record P|1|SYN-PRACTICE
+record L|1|N
+submit
+expect write ENQ
+expect timer 15
+peer ACK
+expect frame 1 final H|\^&|||PACKIE^1.0<CR>
+expect timer 15
+peer ACK
+expect frame 2 final P|1|SYN-PRACTICE<CR>
+expect timer 15
+peer EOT
+expect stop_timer
+expect send_aborted receiver_interrupted

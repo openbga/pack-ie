@@ -1,0 +1,1 @@
+{"rules": [{"op": "for_each", "over": "R", "into": "col", "rules": [{"op": "copy", "from": "$.3.4", "to": "$.test"}, {"op": "copy", "from": "$.4", "to": "$.result"}]}]}

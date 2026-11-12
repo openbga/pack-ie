@@ -1,0 +1,70 @@
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.legend {
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+}
+
+.mode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.modeLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* A ring that fills when chosen, so the choice does not rest on color alone. */
+.indicator {
+  display: inline-block;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+  border: 2px solid var(--color-border-control);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.mode[data-selected] .indicator {
+  border-color: var(--color-accent);
+  background: radial-gradient(circle, var(--color-accent) 40%, var(--color-surface) 45%);
+}
+
+.mode[data-focus-visible] .indicator {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.explanation {
+  padding-left: var(--space-6);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.fixed {
+  margin: 0;
+}
+
+.error {
+  color: var(--tone-danger-text);
+  font-size: var(--font-size-sm);
+}
+
+/* A warning and the checkbox that confirms it, held together and apart from what follows. */
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

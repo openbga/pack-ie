@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "name": "bridge-reconnect",
+  "description": "The remote system starts late: the bridge backs off and alerts, connects when it appears, exchanges data, and reconnects after the instrument disconnects.",
+  "requirements": ["BRG-02", "EPT-06", "LOG-03"],
+  "timeout_ms": 45000,
+  "resources": { "ports": ["a"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "inst-side", "label": "Instrument side", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.a}" } },
+        { "endpoint_id": "sys-side", "label": "System side", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.sys.port}", "connect_timeout_ms": 1000 } }
+      ],
+      "channels": [
+        { "channel_id": "bridge-1", "label": "Bridge 1", "kind": "bridge",
+          "endpoint_a": "inst-side", "endpoint_b": "sys-side",
+          "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "tcp_client" },
+    "sys": { "kind": "tcp_server", "listen": "manual" }
+  },
+  "steps": [
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" },
+      "expect": {
+        "state": "retrying",
+        "retry_count": { "gte": 2 },
+        "next_retry_at": { "exists": true },
+        "endpoint_a.state": "listening",
+        "endpoint_b.consecutive_failure_count": { "gte": 2 },
+        "last_error_summary": { "contains": "connect failed" }
+      } },
+    { "do": "assert_alert", "actor": "engine", "code": "endpoint_down", "scope": { "endpoint": "sys-side" },
+      "expect": { "severity": "warning" } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "node": true }, "expect": { "node_state": "degraded" } },
+
+    { "do": "listen", "actor": "sys" },
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.a}" },
+    { "do": "accept", "actor": "sys" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" },
+      "expect": { "state": "running", "session_state": "bridged" } },
+
+    { "do": "send", "actor": "inst", "text": "first-session\n" },
+    { "do": "expect", "actor": "sys", "text": "first-session\n" },
+    { "do": "send", "actor": "sys", "text": "ack-first\n" },
+    { "do": "expect", "actor": "inst", "text": "ack-first\n" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" },
+      "expect": { "retry_count": 0, "next_retry_at": null, "endpoint_b.consecutive_failure_count": 0 } },
+    { "do": "assert_log", "actor": "engine", "event": "endpoint.retry_succeeded", "fields": { "channel_id": "bridge-1" } },
+    { "do": "assert_alert", "actor": "engine", "code": "endpoint_down", "scope": { "endpoint": "sys-side" }, "present": false },
+
+    { "do": "close", "actor": "inst" },
+    { "do": "expect_closed", "actor": "sys" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" }, "expect": { "state": "retrying" } },
+
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.a}" },
+    { "do": "accept", "actor": "sys" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" },
+      "expect": { "state": "running", "session_state": "bridged" } },
+    { "do": "send", "actor": "inst", "text": "second-session\n" },
+    { "do": "expect", "actor": "sys", "text": "second-session\n" },
+    { "do": "send", "actor": "sys", "text": "ack-second\n" },
+    { "do": "expect", "actor": "inst", "text": "ack-second\n" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-1" }, "expect": { "retry_count": 0 } }
+  ]
+}

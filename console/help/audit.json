@@ -1,0 +1,32 @@
+{
+  "id": "audit",
+  "title": "Audit",
+  "summary": "Who did what through the engine.",
+  "routes": ["/audit"],
+  "sections": [
+    {
+      "title": "What you see",
+      "paragraphs": [
+        "Each row is one recorded event, newest first: Time, Actor (the computer account), Action, Object and Outcome. Requested means a command was about to run, Rejected that it was refused and changed nothing, Failed that it broke. Open a row for the raw action code, the hashes that chain it to its neighbours and its details, such as notes and reasons operators typed. After the idle time the console closes the event, since its details can hold typed text; open the row again to read it."
+      ]
+    },
+    {
+      "title": "Filters",
+      "paragraphs": [
+        "Filter by Time range, Actor, Action, Object type, Object ID and Outcome. Actor and Object ID match exactly: the whole account name or uid/SID, and the whole ID. Filters stay in the address, so Back and reload keep them. Load older events adds the next 100. A narrow list leaves out Object, then Actor; Columns brings them back and adds Origin, and an open event shows all of them."
+      ]
+    },
+    {
+      "title": "Export and verify",
+      "paragraphs": [
+        "Export… saves the events that match the filters, oldest first, as CSV or JSON lines. Verify chain re-checks every event's hash and link and shows the head hash: compare it with the last audit.anchor line of the engine log. Retention removes whole old files; Verify chain then says where the chain starts. The exported file can contain patient identifiers and text operators entered (searched identifiers, reasons, notes): save it only to the lab's protected location. Exporting and verifying are recorded in the log; reading this page is not."
+      ]
+    },
+    {
+      "title": "When it cannot be read",
+      "paragraphs": [
+        "If the audit log cannot be read or written, the page says so, and audited actions such as pausing a channel or applying a configuration are refused until it works again. Try again reads it once more."
+      ]
+    }
+  ]
+}

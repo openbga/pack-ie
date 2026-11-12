@@ -1,0 +1,1173 @@
+{
+  "format": 1,
+  "qualification": "Documented and synthetically tested, not qualified on the instrument: built from published interface documentation and a survey of existing instrument drivers, and tested with synthetic messages only. Validate in the laboratory before clinical use.",
+  "connectors": [
+    {
+      "id": "hl7_mllp_end_without_cr",
+      "label": "HL7 MLLP: end block without carriage return",
+      "protocol": "hl7_mllp",
+      "roles": [
+        "source",
+        "destination"
+      ],
+      "summary": "For senders that end each frame with the end byte 0x1C alone. A carriage return that does follow is accepted. Output still ends 0x1C 0x0D.",
+      "settings": {
+        "require_end_cr": false
+      },
+      "evidence": "Six surveyed instrument drivers end an incoming frame at 0x1C without waiting for 0x0D."
+    },
+    {
+      "id": "hl7_order_response_source",
+      "label": "HL7 source answering orders with order responses",
+      "protocol": "hl7_mllp",
+      "roles": [
+        "source"
+      ],
+      "summary": "Enhanced acknowledgement mode; OML^O33, OML^O35, OML^O21 and ORM^O01 are answered with a base HL7 order response (ORL or ORR) that holds MSH and MSA only. AA means the order was stored; it states no per-order acceptance (there is no ORC) and the reply is not an IHE LAW LAB-28 response. Other messages still get an ACK.",
+      "settings": {
+        "ack_mode": "enhanced",
+        "reply_type": "order_response",
+        "version": "2.5.1"
+      },
+      "evidence": "HL7 v2.5.1 chapter 4: the response group of ORL and ORR is optional, a response may hold only MSH and MSA. Documentation and synthetic tests only."
+    },
+    {
+      "id": "hl7_order_response_destination",
+      "label": "HL7 destination for order messages answered by order responses",
+      "protocol": "hl7_mllp",
+      "roles": [
+        "destination"
+      ],
+      "summary": "Accepts ACK, ORL and ORR as the acknowledgement of a sent order (OML/ORM), correlated by MSA-2 with the order's MSH-10. acknowledged reflects the MSA code only: per-order status in ORC-1 (for example OK or UA) is not evaluated. Without this setting an ORL answer is not recognised and the delivery times out.",
+      "settings": {
+        "ack_message_types": [
+          "ACK",
+          "ORL",
+          "ORR"
+        ],
+        "version": "2.5.1"
+      },
+      "evidence": "Two surveyed instrument drivers take an ORL^O34 answer as the acknowledgement of an order and never read ORC-1."
+    },
+    {
+      "id": "astm_specimen_id_in_o4_component_3",
+      "label": "ASTM source: specimen id in O-4, third component",
+      "protocol": "astm",
+      "roles": [
+        "source"
+      ],
+      "summary": "For instruments that carry the specimen number in the instrument specimen id (O-4, ^^123456^B). It becomes the message's sample id: searchable on the Messages page and part of the duplicate identity. Without it such a message is stored with no sample id.",
+      "settings": {
+        "sample_id_path": "O.4.3"
+      },
+      "evidence": "Nine surveyed drivers of one hematology and coagulation instrument family read the specimen from O-4 component 3. Driver evidence only; the vendor specification was not read."
+    },
+    {
+      "id": "astm_long_frames",
+      "label": "ASTM over TCP: long frames",
+      "protocol": "astm",
+      "roles": [
+        "source",
+        "destination"
+      ],
+      "summary": "Frames of up to 64,000 text characters instead of 240, sent and accepted. Both sides must use the same size.",
+      "settings": {
+        "max_frame_chars": 64000
+      },
+      "evidence": "Hematology TCP interfaces document frames of about 64,000 characters; one LIS middleware driver makes the frame size configurable from 247 to 64,000."
+    },
+    {
+      "id": "astm_repeated_enq",
+      "label": "ASTM: repeat ENQ before giving up",
+      "protocol": "astm",
+      "roles": [
+        "destination"
+      ],
+      "summary": "Sends ENQ up to 7 times (a quiet or busy receiver) before the send is abandoned and retried by the delivery policy.",
+      "settings": {
+        "enq_attempts": 7
+      },
+      "evidence": "A published LIS middleware interface guide (Siemens Atellica Data Manager) sends ENQ again up to 7 times instead of EOT when the receiver does not reply within 15 seconds."
+    }
+  ],
+  "mappings": [
+    {
+      "id": "astm_results_to_hl7_oru",
+      "label": "ASTM results to HL7 ORU^R01 (E1394 layout: test code in the 4th component)",
+      "from": "astm",
+      "to": "hl7_mllp",
+      "summary": "Patient, specimen and one OBX per result record. The test code is read from the 4th component of the universal test id (^^^Ferritin^1), the value from the first component of R-4, the reference range from R-6.",
+      "notes": [
+        "Put your test codes in the tests table (code to the OBX-3 text, for example Ferritin to 2276-4^Ferritin^LN); a code that is not listed is kept as it is.",
+        "A message that holds several patients or orders (a batch upload) is refused with a transform error instead of mixing specimens; send results per sample.",
+        "Only the first component of the result value (R-4) is mapped. OBX-2 is NM for a plain number and ST for anything else.",
+        "Dates are copied as sent. Convert time zones with a datetime rule if the instrument's clock is not the lab's.",
+        "Fits the documented result upload of the Beckman Coulter Access/DxI interface (test code in R-3.4, replicate in R-3.5, reference range text in R-6, the interpretation text of R-4.2 is not carried) and the Roche Elecsys-type upload (code in R-3.4; its low^high range in R-6 is carried as 'low' only)."
+      ],
+      "mapping": {
+        "require_single_group": true,
+        "tables": {
+          "tests": {}
+        },
+        "rules": [
+          {
+            "op": "constant",
+            "value": "ORU^R01",
+            "to": "MSH.9"
+          },
+          {
+            "op": "copy",
+            "from": "P.3",
+            "to": "PID.3"
+          },
+          {
+            "op": "copy",
+            "from": "P.6",
+            "to": "PID.5"
+          },
+          {
+            "op": "copy",
+            "from": "P.8",
+            "to": "PID.7"
+          },
+          {
+            "op": "copy",
+            "from": "P.9",
+            "to": "PID.8"
+          },
+          {
+            "op": "copy",
+            "from": "O.3",
+            "to": "OBR.3"
+          },
+          {
+            "op": "copy",
+            "from": "O.5.4",
+            "to": "OBR.4.1"
+          },
+          {
+            "op": "copy",
+            "from": "O.8",
+            "to": "OBR.7"
+          },
+          {
+            "op": "for_each",
+            "over": "R",
+            "into": "OBX",
+            "rules": [
+              {
+                "op": "sequence",
+                "to": "$.1"
+              },
+              {
+                "op": "when",
+                "condition": {
+                  "path": "$.4.1",
+                  "op": "matches",
+                  "value": "^-?[0-9]*\\.?[0-9]+$"
+                },
+                "then": [
+                  {
+                    "op": "constant",
+                    "value": "NM",
+                    "to": "$.2"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "constant",
+                    "value": "ST",
+                    "to": "$.2"
+                  }
+                ]
+              },
+              {
+                "op": "lookup",
+                "table": "tests",
+                "to": "$.3",
+                "on_missing": "keep",
+                "from": "$.3.4"
+              },
+              {
+                "op": "copy",
+                "from": "$.4.1",
+                "to": "$.5"
+              },
+              {
+                "op": "copy",
+                "from": "$.5",
+                "to": "$.6"
+              },
+              {
+                "op": "copy",
+                "from": "$.6.1",
+                "to": "$.7"
+              },
+              {
+                "op": "copy",
+                "from": "$.7",
+                "to": "$.8"
+              },
+              {
+                "op": "copy",
+                "from": "$.9",
+                "to": "$.11",
+                "default": "F"
+              },
+              {
+                "op": "copy",
+                "from": "$.13",
+                "to": "$.14"
+              },
+              {
+                "op": "copy",
+                "from": "$.11",
+                "to": "$.16"
+              },
+              {
+                "op": "copy",
+                "from": "$.14",
+                "to": "$.18"
+              }
+            ]
+          }
+        ]
+      },
+      "destination_settings": {
+        "version": "2.5.1"
+      },
+      "sample": {
+        "header": {
+          "MSH.3": "PACKIE",
+          "MSH.4": "LAB",
+          "MSH.5": "LIS",
+          "MSH.6": "HOSP",
+          "MSH.7": "20261012120500",
+          "MSH.10": "CTRL-0001",
+          "MSH.11": "P",
+          "MSH.12": "2.5.1"
+        },
+        "input": "H|\\^&|||ANALYZER^700123|||||LIS||P|1|20261012114200\rP|1|SYN-000042\rO|1|SPEC1234|^3^7|^^^Ferritin^2|||||||||||Serum||||||||||F\rR|1|^^^Ferritin^1|88.4|ng/mL|20.0 to 250.0^Normal|N||F||||20261012114200|700123\rR|2|^^^HBsAg^1|0.31^Nonreactive|S/CO||N||F||||20261012114200|700123\rL|1|N\r",
+        "output": "MSH|^~\\&|PACKIE|LAB|LIS|HOSP|20261012120500||ORU^R01|CTRL-0001|P|2.5.1\rPID|||SYN-000042\rOBR|||SPEC1234|Ferritin\rOBX|1|NM|Ferritin||88.4|ng/mL|20.0 to 250.0|N|||F|||20261012114200||||700123\rOBX|2|NM|HBsAg||0.31|S/CO||N|||F|||20261012114200||||700123\r"
+      },
+      "evidence": "Beckman Coulter C03112-AF (UniCel DxI / Access 2 LIS Vendor Information), tables 3-2 to 3-5 and the typical upload messages; Roche cobas e 411 Host Interface Manual v2.2, result record. Fixture is synthetic."
+    },
+    {
+      "id": "astm_results_to_hl7_oru_roche_cobas",
+      "label": "ASTM results to HL7 ORU^R01 (cobas-type upload: code before the slash)",
+      "from": "astm",
+      "to": "hl7_mllp",
+      "summary": "For the cobas-type format of the Roche/Hitachi cobas e 411, whose universal test id is ^^^code/dilution/pre-dilution: the host test code before the first slash becomes OBX-3, the operator R-11 OBX-16 and the instrument id R-14 OBX-18.",
+      "notes": [
+        "Put your test codes in the tests table (code to the OBX-3 text, for example Ferritin to 2276-4^Ferritin^LN); a code that is not listed is kept as it is.",
+        "A message that holds several patients or orders (a batch upload) is refused with a transform error instead of mixing specimens; send results per sample.",
+        "Only the first component of the result value (R-4) is mapped. OBX-2 is NM for a plain number and ST for anything else.",
+        "Dates are copied as sent. Convert time zones with a datetime rule if the instrument's clock is not the lab's.",
+        "R-9 status F (initial result) and C (rerun result) are copied; HL7 reads C as a corrected result.",
+        "Abnormal flags L, H, LL, HH, N, A are copied as sent; the instrument's LL and HH mean 'outside the measuring range', which HL7 table 0078 does not say.",
+        "A qualitative result arrives as a code (1 positive, 0 border line, -1 negative) in R-4; translate it per assay with a rule of your own."
+      ],
+      "mapping": {
+        "require_single_group": true,
+        "tables": {
+          "tests": {}
+        },
+        "rules": [
+          {
+            "op": "constant",
+            "value": "ORU^R01",
+            "to": "MSH.9"
+          },
+          {
+            "op": "copy",
+            "from": "P.3",
+            "to": "PID.3"
+          },
+          {
+            "op": "copy",
+            "from": "P.6",
+            "to": "PID.5"
+          },
+          {
+            "op": "copy",
+            "from": "P.8",
+            "to": "PID.7"
+          },
+          {
+            "op": "copy",
+            "from": "P.9",
+            "to": "PID.8"
+          },
+          {
+            "op": "copy",
+            "from": "O.3",
+            "to": "OBR.3"
+          },
+          {
+            "op": "copy",
+            "from": "O.5.4",
+            "to": "OBR.4.1"
+          },
+          {
+            "op": "copy",
+            "from": "O.8",
+            "to": "OBR.7"
+          },
+          {
+            "op": "for_each",
+            "over": "R",
+            "into": "OBX",
+            "rules": [
+              {
+                "op": "sequence",
+                "to": "$.1"
+              },
+              {
+                "op": "when",
+                "condition": {
+                  "path": "$.4.1",
+                  "op": "matches",
+                  "value": "^-?[0-9]*\\.?[0-9]+$"
+                },
+                "then": [
+                  {
+                    "op": "constant",
+                    "value": "NM",
+                    "to": "$.2"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "constant",
+                    "value": "ST",
+                    "to": "$.2"
+                  }
+                ]
+              },
+              {
+                "op": "lookup",
+                "table": "tests",
+                "to": "$.3",
+                "on_missing": "keep",
+                "from": "$.3.4",
+                "steps": [
+                  {
+                    "step": "split",
+                    "separator": "/",
+                    "take": 0
+                  }
+                ]
+              },
+              {
+                "op": "copy",
+                "from": "$.4.1",
+                "to": "$.5"
+              },
+              {
+                "op": "copy",
+                "from": "$.5",
+                "to": "$.6"
+              },
+              {
+                "op": "copy",
+                "from": "$.7",
+                "to": "$.8"
+              },
+              {
+                "op": "copy",
+                "from": "$.9",
+                "to": "$.11",
+                "default": "F"
+              },
+              {
+                "op": "copy",
+                "from": "$.13",
+                "to": "$.14"
+              },
+              {
+                "op": "copy",
+                "from": "$.11",
+                "to": "$.16"
+              },
+              {
+                "op": "copy",
+                "from": "$.14",
+                "to": "$.18"
+              }
+            ]
+          }
+        ]
+      },
+      "destination_settings": {
+        "version": "2.5.1"
+      },
+      "sample": {
+        "header": {
+          "MSH.3": "PACKIE",
+          "MSH.4": "LAB",
+          "MSH.5": "LIS",
+          "MSH.6": "HOSP",
+          "MSH.7": "20261012120500",
+          "MSH.10": "CTRL-0001",
+          "MSH.11": "P",
+          "MSH.12": "2.5.1"
+        },
+        "input": "H|\\^&|||cobas-e411^1|||||host|RSUPL^BATCH|P|1\rP|1\rO|1|004217|12^31^4^^S1^SC|^^^21^1|R||20261012101500||||N||||1|||||||20261012103000|||F\rR|1|^^^21//not|1.870|uIU/mL||N||F||tech1|||E1\rR|2|^^^45/5/pre-diluted|0.740^|ng/dL||N||F||tech1|||E1\rL|1|N\r",
+        "output": "MSH|^~\\&|PACKIE|LAB|LIS|HOSP|20261012120500||ORU^R01|CTRL-0001|P|2.5.1\rOBR|||004217|21|||20261012101500\rOBX|1|NM|21||1.870|uIU/mL||N|||F|||||tech1||E1\rOBX|2|NM|45||0.740|ng/dL||N|||F|||||tech1||E1\r"
+      },
+      "evidence": "Roche/Hitachi cobas e 411 Host Interface Manual v2.2 (Nov 2013), result record cobas-type format and the uploaded examples. Fixture is synthetic."
+    },
+    {
+      "id": "astm_results_to_hl7_oru_instrument_specimen_id",
+      "label": "ASTM results to HL7 ORU^R01 (specimen id in O-4, test code in the 5th component)",
+      "from": "astm",
+      "to": "hl7_mllp",
+      "summary": "For instruments that put the specimen number in the instrument specimen id (O-4, third component: ^^123456^B) and the test code in the fifth component of the universal test id (^^^^WBC^1).",
+      "notes": [
+        "Put your test codes in the tests table (code to the OBX-3 text, for example Ferritin to 2276-4^Ferritin^LN); a code that is not listed is kept as it is.",
+        "A message that holds several patients or orders (a batch upload) is refused with a transform error instead of mixing specimens; send results per sample.",
+        "Only the first component of the result value (R-4) is mapped. OBX-2 is NM for a plain number and ST for anything else.",
+        "Dates are copied as sent. Convert time zones with a datetime rule if the instrument's clock is not the lab's.",
+        "Set the source connector's sample_id_path to O.4.3 (connector profile astm_specimen_id_in_o4_component_3): the mapping reads the specimen there, but the stored message gets its sample id, its search entry and its duplicate identity from that setting."
+      ],
+      "mapping": {
+        "require_single_group": true,
+        "tables": {
+          "tests": {}
+        },
+        "rules": [
+          {
+            "op": "constant",
+            "value": "ORU^R01",
+            "to": "MSH.9"
+          },
+          {
+            "op": "copy",
+            "from": "P.3",
+            "to": "PID.3"
+          },
+          {
+            "op": "copy",
+            "from": "P.6",
+            "to": "PID.5"
+          },
+          {
+            "op": "copy",
+            "from": "P.8",
+            "to": "PID.7"
+          },
+          {
+            "op": "copy",
+            "from": "P.9",
+            "to": "PID.8"
+          },
+          {
+            "op": "copy",
+            "from": "O.4.3",
+            "to": "OBR.3"
+          },
+          {
+            "op": "copy",
+            "from": "O.5.5",
+            "to": "OBR.4.1"
+          },
+          {
+            "op": "copy",
+            "from": "O.8",
+            "to": "OBR.7"
+          },
+          {
+            "op": "for_each",
+            "over": "R",
+            "into": "OBX",
+            "rules": [
+              {
+                "op": "sequence",
+                "to": "$.1"
+              },
+              {
+                "op": "when",
+                "condition": {
+                  "path": "$.4.1",
+                  "op": "matches",
+                  "value": "^-?[0-9]*\\.?[0-9]+$"
+                },
+                "then": [
+                  {
+                    "op": "constant",
+                    "value": "NM",
+                    "to": "$.2"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "constant",
+                    "value": "ST",
+                    "to": "$.2"
+                  }
+                ]
+              },
+              {
+                "op": "lookup",
+                "table": "tests",
+                "to": "$.3",
+                "on_missing": "keep",
+                "from": "$.3.5"
+              },
+              {
+                "op": "copy",
+                "from": "$.4.1",
+                "to": "$.5"
+              },
+              {
+                "op": "copy",
+                "from": "$.5",
+                "to": "$.6"
+              },
+              {
+                "op": "copy",
+                "from": "$.7",
+                "to": "$.8"
+              },
+              {
+                "op": "copy",
+                "from": "$.9",
+                "to": "$.11",
+                "default": "F"
+              },
+              {
+                "op": "copy",
+                "from": "$.13",
+                "to": "$.14"
+              },
+              {
+                "op": "copy",
+                "from": "$.11",
+                "to": "$.16"
+              },
+              {
+                "op": "copy",
+                "from": "$.14",
+                "to": "$.18"
+              }
+            ]
+          }
+        ]
+      },
+      "destination_settings": {
+        "version": "2.5.1"
+      },
+      "sample": {
+        "header": {
+          "MSH.3": "PACKIE",
+          "MSH.4": "LAB",
+          "MSH.5": "LIS",
+          "MSH.6": "HOSP",
+          "MSH.7": "20261012120500",
+          "MSH.10": "CTRL-0001",
+          "MSH.11": "P",
+          "MSH.12": "2.5.1"
+        },
+        "source_settings": {
+          "sample_id_path": "O.4.3"
+        },
+        "input": "H|\\^&|||HEMA-1^1.0|||||||P|LIS2-A2|20261012120000\rP|1||||DOE^JANE||19800101|F\rO|1||^^SYN-0001^B|^^^^WBC|R|20261012110000|20261012113000\rR|1|^^^^WBC^1|6.5|10*3/uL||N||F||OP||20261012115959\rR|2|^^^^FLAG^1|POSITIVE|||||F||OP||20261012120105\rL|1|N\r",
+        "output": "MSH|^~\\&|PACKIE|LAB|LIS|HOSP|20261012120500||ORU^R01|CTRL-0001|P|2.5.1\rPID|||||DOE^JANE||19800101|F\rOBR|||SYN-0001|WBC|||20261012113000\rOBX|1|NM|WBC||6.5|10*3/uL||N|||F|||20261012115959||OP\rOBX|2|ST|FLAG||POSITIVE||||||F|||20261012120105||OP\r"
+      },
+      "evidence": "Nine surveyed drivers of one hematology and coagulation instrument family read the specimen from O-4 component 3 and the analyte from R-3 component 5. The instrument vendor's specification was not read; the fixture is synthetic."
+    },
+    {
+      "id": "au_results_to_hl7_oru",
+      "label": "AU results to HL7 ORU^R01",
+      "from": "au",
+      "to": "hl7_mllp",
+      "summary": "The sample id and one OBX per result item. The instrument's two-character flags are mapped through the flags table, which ships empty (nothing is mapped until you list the flags your instrument sends).",
+      "notes": [
+        "The test codes of the instrument's parameter sheet (01, 02, ...) go in the tests table; an unlisted code is kept as it is.",
+        "Leading zeros of the instrument's fixed-width value are removed (005.50 becomes 5.50, 000.40 becomes 0.40); trailing zeros are kept.",
+        "Quality-control, calibration and reagent-blank messages are mapped too; use a channel filter on kind (normal, rerun, stat, stat_rerun) to send patient results only.",
+        "The sample input is the framed message exactly as the instrument sends it (start and end control bytes included), read with the source settings shown."
+      ],
+      "mapping": {
+        "tables": {
+          "tests": {},
+          "flags": {}
+        },
+        "rules": [
+          {
+            "op": "constant",
+            "value": "ORU^R01",
+            "to": "MSH.9"
+          },
+          {
+            "op": "copy",
+            "from": "sample_id",
+            "to": "OBR.3"
+          },
+          {
+            "op": "for_each",
+            "over": "test",
+            "into": "OBX",
+            "rules": [
+              {
+                "op": "sequence",
+                "to": "$.1"
+              },
+              {
+                "op": "constant",
+                "value": "NM",
+                "to": "$.2"
+              },
+              {
+                "op": "lookup",
+                "from": "$.code",
+                "table": "tests",
+                "to": "$.3",
+                "on_missing": "keep"
+              },
+              {
+                "op": "when",
+                "condition": {
+                  "path": "$.value",
+                  "op": "matches",
+                  "value": "^ *0*\\."
+                },
+                "then": [
+                  {
+                    "op": "concat",
+                    "parts": [
+                      {
+                        "text": "0"
+                      },
+                      {
+                        "from": "$.value",
+                        "steps": [
+                          {
+                            "step": "trim"
+                          },
+                          {
+                            "step": "strip_leading",
+                            "chars": "0"
+                          }
+                        ]
+                      }
+                    ],
+                    "to": "$.5"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "copy",
+                    "from": "$.value",
+                    "steps": [
+                      {
+                        "step": "trim"
+                      },
+                      {
+                        "step": "strip_leading",
+                        "chars": "0"
+                      }
+                    ],
+                    "to": "$.5"
+                  }
+                ]
+              },
+              {
+                "op": "lookup",
+                "from": "$.flags",
+                "table": "flags",
+                "to": "$.8",
+                "on_missing": "skip"
+              }
+            ]
+          }
+        ]
+      },
+      "destination_settings": {
+        "version": "2.5.1"
+      },
+      "sample": {
+        "header": {
+          "MSH.3": "PACKIE",
+          "MSH.4": "LAB",
+          "MSH.5": "LIS",
+          "MSH.6": "HOSP",
+          "MSH.7": "20261012120500",
+          "MSH.10": "CTRL-0001",
+          "MSH.11": "P",
+          "MSH.12": "2.5.1"
+        },
+        "source_settings": {
+          "profile": "au640",
+          "framing": {
+            "start": [
+              2
+            ],
+            "end": [
+              3
+            ],
+            "bcc": false,
+            "use_etb": false,
+            "max_wire_len": 256,
+            "class": "a"
+          },
+          "format": {
+            "unit_no": true,
+            "rack_digits": 4,
+            "sample_id_digits": 8,
+            "sex": false,
+            "age": false,
+            "month": false,
+            "patient_info_digits": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "result_digits": 6,
+            "test_code_digits": 2
+          },
+          "frame_timeout_ms": 5000
+        },
+        "input": "\u0002D 01000101U0001SYN00042    E01005.50  12000.40H \u0003",
+        "output": "MSH|^~\\&|PACKIE|LAB|LIS|HOSP|20261012120500||ORU^R01|CTRL-0001|P|2.5.1\rOBR|||SYN00042\rOBX|1|NM|01||5.50\rOBX|2|NM|12||0.40\r"
+      },
+      "evidence": "Fixed-width result message of the online parameter sheet (sample id and result items) as parsed by the AU codec; synthetic fixture."
+    },
+    {
+      "id": "hl7_orm_to_astm_download",
+      "label": "HL7 ORM^O01 order to ASTM order download (Access/DxI layout)",
+      "from": "hl7_mllp",
+      "to": "astm",
+      "summary": "A patient record (id, name, birth date, sex) and one order record: specimen id from OBR-3, the tests of every OBR as ^^^code repeats, priority S or R, action code from ORC-1 (NW to A, CA to C), specimen type text from OBR-15.",
+      "notes": [
+        "The message must be one patient, one specimen and one order: every OBR becomes a repetition of the universal test id of one order record (1 to 18 tests), and every OBR must carry the same specimen id, priority and order control. A message that is not (several patients or specimens, more than 18 tests, mixed values) is refused with a transform error, nothing is dropped or filtered.",
+        "Put your test codes in the tests table to translate the LIS code to the instrument's code; an unlisted code is sent as it is.",
+        "A priority other than S or R, an order control other than NW or CA, and an unlisted specimen type are left out; the instrument then uses its defaults (an unknown priority code would make it reject the order)."
+      ],
+      "mapping": {
+        "require": [
+          {
+            "count": "PID",
+            "max": 1
+          },
+          {
+            "count": "OBR",
+            "min": 1,
+            "max": 18
+          },
+          {
+            "same": "OBR.3.1"
+          },
+          {
+            "same": "OBR.5"
+          },
+          {
+            "same": "ORC.1"
+          },
+          {
+            "same": "OBR.15.1"
+          }
+        ],
+        "tables": {
+          "tests": {},
+          "priority": {
+            "S": "S",
+            "R": "R"
+          },
+          "action": {
+            "NW": "A",
+            "CA": "C"
+          },
+          "specimen_types": {
+            "AMN": "Amniotic",
+            "BLD": "Blood",
+            "CSF": "CSF",
+            "PLAS": "Plasma",
+            "SAL": "Saliva",
+            "SER": "Serum",
+            "SYN": "Synovial",
+            "UR": "Urine"
+          }
+        },
+        "rules": [
+          {
+            "op": "constant",
+            "value": "1",
+            "to": "P.2"
+          },
+          {
+            "op": "copy",
+            "from": "PID.3.1",
+            "to": "P.3"
+          },
+          {
+            "op": "copy",
+            "from": "PID.5",
+            "to": "P.6"
+          },
+          {
+            "op": "copy",
+            "from": "PID.7",
+            "steps": [
+              {
+                "step": "slice",
+                "start": 0,
+                "length": 8
+              }
+            ],
+            "to": "P.8"
+          },
+          {
+            "op": "copy",
+            "from": "PID.8",
+            "to": "P.9"
+          },
+          {
+            "op": "constant",
+            "value": "1",
+            "to": "O.2"
+          },
+          {
+            "op": "copy",
+            "from": "OBR[0].3",
+            "to": "O.3",
+            "required": true
+          },
+          {
+            "op": "for_each",
+            "over": "OBR",
+            "into": "O.5",
+            "mode": "repeat",
+            "rules": [
+              {
+                "op": "copy",
+                "from": "$.4.1",
+                "to": "$.5.4",
+                "required": true
+              },
+              {
+                "op": "lookup",
+                "from": "$.4.1",
+                "table": "tests",
+                "to": "$.5.4",
+                "on_missing": "skip"
+              }
+            ]
+          },
+          {
+            "op": "lookup",
+            "from": "OBR[0].5",
+            "table": "priority",
+            "to": "O.6",
+            "on_missing": "skip"
+          },
+          {
+            "op": "lookup",
+            "from": "ORC[0].1",
+            "table": "action",
+            "to": "O.12",
+            "on_missing": "skip"
+          },
+          {
+            "op": "lookup",
+            "from": "OBR[0].15.1",
+            "table": "specimen_types",
+            "to": "O.16",
+            "on_missing": "skip"
+          }
+        ]
+      },
+      "sample": {
+        "input": "MSH|^~\\&|LIS|HOSP|PACKIE|LAB|20261012120000||ORM^O01|ORD-1|P|2.5.1\rPID|1||PRAC-1||DOE^JANE^A||19800101120000|F\rORC|NW|PL-1\rOBR|1|PL-1|SPEC1234|FER^Ferritin^L|S||20261012110000||||||||SER\rORC|NW|PL-2\rOBR|2|PL-2|SPEC1234|TSH^TSH^L|S||20261012110000||||||||SER\r",
+        "output": "H|\\^&\rP|1|PRAC-1|||DOE^JANE^A||19800101|F\rO|1|SPEC1234||^^^FER\\^^^TSH|S||||||A||||Serum\rL|1|N\r"
+      },
+      "evidence": "Beckman Coulter C03112-AF (UniCel DxI / Access 2 LIS Vendor Information), test order record: specimen id O-3, universal test id O-5 (fourth component, repeat delimiter supported), priority S or R, action code A, C or N, specimen type text; patient record P-3, P-6, P-8, P-9. Fixture is synthetic."
+    },
+    {
+      "id": "hl7_oml_o33_to_astm_download",
+      "label": "HL7 OML^O33 order to ASTM order download (Access/DxI layout)",
+      "from": "hl7_mllp",
+      "to": "astm",
+      "summary": "As the ORM preset for an OML^O33 order: specimen id from SPM-2 (entity identifier), specimen type from SPM-4, one order record with the tests of every OBR. It reads the IHE LAW layout of the order (SPM, OBR-4) only; it is not LAB-28 support.",
+      "notes": [
+        "The message must be one patient, one specimen and one order: every OBR becomes a repetition of the universal test id of one order record (1 to 18 tests), and every OBR must carry the same specimen id, priority and order control. A message that is not (several patients or specimens, more than 18 tests, mixed values) is refused with a transform error, nothing is dropped or filtered.",
+        "Put your test codes in the tests table to translate the LIS code to the instrument's code; an unlisted code is sent as it is."
+      ],
+      "mapping": {
+        "require": [
+          {
+            "count": "PID",
+            "max": 1
+          },
+          {
+            "count": "SPM",
+            "min": 1,
+            "max": 1
+          },
+          {
+            "count": "OBR",
+            "min": 1,
+            "max": 18
+          },
+          {
+            "same": "OBR.3.1"
+          },
+          {
+            "same": "OBR.5"
+          },
+          {
+            "same": "ORC.1"
+          }
+        ],
+        "tables": {
+          "tests": {},
+          "priority": {
+            "S": "S",
+            "R": "R"
+          },
+          "action": {
+            "NW": "A",
+            "CA": "C"
+          },
+          "specimen_types": {
+            "AMN": "Amniotic",
+            "BLD": "Blood",
+            "CSF": "CSF",
+            "PLAS": "Plasma",
+            "SAL": "Saliva",
+            "SER": "Serum",
+            "SYN": "Synovial",
+            "UR": "Urine"
+          }
+        },
+        "rules": [
+          {
+            "op": "constant",
+            "value": "1",
+            "to": "P.2"
+          },
+          {
+            "op": "copy",
+            "from": "PID.3.1",
+            "to": "P.3"
+          },
+          {
+            "op": "copy",
+            "from": "PID.5",
+            "to": "P.6"
+          },
+          {
+            "op": "copy",
+            "from": "PID.7",
+            "steps": [
+              {
+                "step": "slice",
+                "start": 0,
+                "length": 8
+              }
+            ],
+            "to": "P.8"
+          },
+          {
+            "op": "copy",
+            "from": "PID.8",
+            "to": "P.9"
+          },
+          {
+            "op": "constant",
+            "value": "1",
+            "to": "O.2"
+          },
+          {
+            "op": "copy",
+            "from": "SPM[0].2.1.1",
+            "to": "O.3",
+            "required": true
+          },
+          {
+            "op": "for_each",
+            "over": "OBR",
+            "into": "O.5",
+            "mode": "repeat",
+            "rules": [
+              {
+                "op": "copy",
+                "from": "$.4.1",
+                "to": "$.5.4",
+                "required": true
+              },
+              {
+                "op": "lookup",
+                "from": "$.4.1",
+                "table": "tests",
+                "to": "$.5.4",
+                "on_missing": "skip"
+              }
+            ]
+          },
+          {
+            "op": "lookup",
+            "from": "OBR[0].5",
+            "table": "priority",
+            "to": "O.6",
+            "on_missing": "skip"
+          },
+          {
+            "op": "lookup",
+            "from": "ORC[0].1",
+            "table": "action",
+            "to": "O.12",
+            "on_missing": "skip"
+          },
+          {
+            "op": "lookup",
+            "from": "SPM[0].4.1",
+            "table": "specimen_types",
+            "to": "O.16",
+            "on_missing": "skip"
+          }
+        ]
+      },
+      "sample": {
+        "input": "MSH|^~\\&|LIS|HOSP|PACKIE|LAB|20261012120000||OML^O33^OML_O33|ORD-2|P|2.5.1\rPID|1||PRAC-1||DOE^JANE^A||19800101120000|F\rSPM|1|SPEC1234||SER\rORC|NW|PL-1\rOBR|1|PL-1||FER^Ferritin^L|R\rORC|NW|PL-2\rOBR|2|PL-2||TSH^TSH^L|R\r",
+        "output": "H|\\^&\rP|1|PRAC-1|||DOE^JANE^A||19800101|F\rO|1|SPEC1234||^^^FER\\^^^TSH|R||||||A||||Serum\rL|1|N\r"
+      },
+      "evidence": "Beckman Coulter C03112-AF (UniCel DxI / Access 2 LIS Vendor Information), test order record: specimen id O-3, universal test id O-5 (fourth component, repeat delimiter supported), priority S or R, action code A, C or N, specimen type text; patient record P-3, P-6, P-8, P-9. Fixture is synthetic. The OML^O33 input layout (specimen in SPM, test in OBR-4) is the one IHE LAW describes; nothing else of LAW is implemented."
+    },
+    {
+      "id": "hl7_orm_to_astm_download_roche_cobas",
+      "label": "HL7 ORM^O01 order to ASTM order download (cobas-type layout)",
+      "from": "hl7_mllp",
+      "to": "astm",
+      "summary": "For the Roche/Hitachi cobas e 411 cobas-type format: a bare P record, one order record with the specimen id, the tests as ^^^code repeats, priority, collection time (14 digits), action code A, numeric specimen type (1 serum, 2 urine) and report type O.",
+      "notes": [
+        "The message must be one patient, one specimen and one order: every OBR becomes a repetition of the universal test id of one order record (1 to 18 tests), and every OBR must carry the same specimen id, priority and order control. A message that is not (several patients or specimens, more than 18 tests, mixed values) is refused with a transform error, nothing is dropped or filtered.",
+        "Put your test codes in the tests table to translate the LIS code to the instrument's code; an unlisted code is sent as it is.",
+        "The instrument takes at most 18 tests selected per order record and refuses repeating the same test in one record; all OBR must also carry the same collection time and specimen type.",
+        "A specimen type other than serum or urine is left out, and the instrument uses its own."
+      ],
+      "mapping": {
+        "require": [
+          {
+            "count": "PID",
+            "max": 1
+          },
+          {
+            "count": "OBR",
+            "min": 1,
+            "max": 18
+          },
+          {
+            "same": "OBR.3.1"
+          },
+          {
+            "same": "OBR.5"
+          },
+          {
+            "same": "ORC.1"
+          },
+          {
+            "same": "OBR.7"
+          },
+          {
+            "same": "OBR.15.1"
+          }
+        ],
+        "tables": {
+          "tests": {},
+          "priority": {
+            "S": "S",
+            "R": "R"
+          },
+          "specimen_types": {
+            "SER": "1",
+            "UR": "2"
+          }
+        },
+        "rules": [
+          {
+            "op": "constant",
+            "value": "1",
+            "to": "P.2"
+          },
+          {
+            "op": "constant",
+            "value": "1",
+            "to": "O.2"
+          },
+          {
+            "op": "copy",
+            "from": "OBR[0].3",
+            "to": "O.3",
+            "required": true
+          },
+          {
+            "op": "for_each",
+            "over": "OBR",
+            "into": "O.5",
+            "mode": "repeat",
+            "rules": [
+              {
+                "op": "copy",
+                "from": "$.4.1",
+                "to": "$.5.4",
+                "required": true
+              },
+              {
+                "op": "lookup",
+                "from": "$.4.1",
+                "table": "tests",
+                "to": "$.5.4",
+                "on_missing": "skip"
+              }
+            ]
+          },
+          {
+            "op": "lookup",
+            "from": "OBR[0].5",
+            "table": "priority",
+            "to": "O.6",
+            "on_missing": "skip"
+          },
+          {
+            "op": "copy",
+            "from": "OBR[0].7",
+            "steps": [
+              {
+                "step": "slice",
+                "start": 0,
+                "length": 14
+              }
+            ],
+            "to": "O.8"
+          },
+          {
+            "op": "constant",
+            "value": "A",
+            "to": "O.12"
+          },
+          {
+            "op": "lookup",
+            "from": "OBR[0].15.1",
+            "table": "specimen_types",
+            "to": "O.16",
+            "on_missing": "skip"
+          },
+          {
+            "op": "constant",
+            "value": "O",
+            "to": "O.26"
+          }
+        ]
+      },
+      "sample": {
+        "input": "MSH|^~\\&|LIS|HOSP|PACKIE|LAB|20261012120000||ORM^O01|ORD-1|P|2.5.1\rPID|1||PRAC-1||DOE^JANE^A||19800101120000|F\rORC|NW|PL-1\rOBR|1|PL-1|SPEC1234|FER^Ferritin^L|S||20261012110000||||||||SER\rORC|NW|PL-2\rOBR|2|PL-2|SPEC1234|TSH^TSH^L|S||20261012110000||||||||SER\r",
+        "output": "H|\\^&\rP|1\rO|1|SPEC1234||^^^FER\\^^^TSH|S||20261012110000||||A||||1||||||||||O\rL|1|N\r"
+      },
+      "evidence": "Roche/Hitachi cobas e 411 Host Interface Manual v2.2 (Nov 2013), test order record cobas-type download: O-3 specimen id, O-5 ^^^code^dilution repeated with \\, O-6 priority R or S, O-8 collection time, O-12 action code A, O-16 sample type 1/2/5, O-26 report type O; patient record P|1. Fixture is synthetic."
+    }
+  ]
+}

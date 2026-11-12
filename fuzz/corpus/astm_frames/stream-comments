@@ -1,0 +1,9 @@
+1H|\^&|||SYNTH-ANALYZER^1.0|||||||P|LIS2-A2|2026101212000086
+2P|1|SYN-PRACTICE-0001|SYN-LAB-00017B
+3C|1|I|Synthetic patient comment|G1A
+4O|1|SYN-0001|SYN-INST-0001|^^^SYN-TEST|R||||||N||||URINEE7
+5C|1|I|Synthetic order comment|G43
+6R|1|^^^SYN-TEST|1.2300|ng/mL||||F51
+7C|1|I|Synthetic result comment|GC8
+0L|1|N03
+

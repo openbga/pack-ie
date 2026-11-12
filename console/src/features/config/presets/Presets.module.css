@@ -1,0 +1,46 @@
+.plan {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.plan th,
+.plan td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.plan thead th {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+}
+
+.problem {
+  color: var(--tone-danger-text);
+  font-size: var(--font-size-sm);
+}
+
+.evidence {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.example {
+  margin: 0;
+  padding: var(--space-2);
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken, var(--color-surface));
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.notes {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}

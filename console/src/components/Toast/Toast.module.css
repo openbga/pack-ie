@@ -1,0 +1,45 @@
+.region {
+  position: fixed;
+  /* Top right, just under the app shell's top bar (its min-height is --space-12). */
+  top: calc(var(--space-12) + var(--space-4));
+  right: var(--space-4);
+  z-index: var(--z-toast);
+  width: min(24rem, calc(100vw - 2 * var(--space-4)));
+  pointer-events: none;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border: 1px solid var(--tone-border);
+  border-left-width: var(--space-1);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+  pointer-events: auto;
+}
+
+.icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+  margin-top: var(--space-2);
+  color: var(--tone-text);
+}
+
+.text {
+  flex: 1;
+  padding: var(--space-1) 0;
+}
+
+.title {
+  font-weight: var(--font-weight-semibold);
+}

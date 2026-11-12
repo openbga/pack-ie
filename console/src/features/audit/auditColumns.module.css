@@ -1,0 +1,8 @@
+/* Action and Object wrap onto at most two lines; the whole text is the title. */
+.clamp {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}

@@ -1,0 +1,20 @@
+---
+source: crates/packie-transform/tests/filters.rs
+expression: "text.join(\"\\n\")"
+---
+channels[0].filters[0].op: unknown operator; use one of equals, not_equals, in, not_in, starts_with, contains, matches, exists, not_exists, gt, gte, lt, lte
+channels[0].filters[1].path: invalid path at position 4: expected a name of lowercase letters, digits and `_`, at most 41 long
+channels[0].filters[2].path: unknown column `unknown`
+channels[0].filters[3].all: needs at least one expression
+channels[0].filters[4].value: `exists` takes no value
+channels[0].filters[5].value: must be a decimal number such as 5 or -0.25
+channels[0].filters[6].value: not a usable regular expression: unclosed group
+channels[0].filters[7].value: is required
+channels[0].filters[8].path: `$.` paths are only valid inside for_each
+channels[0].filters[9].extra: unknown field
+channels[0].filters[10].not.op: is required
+channels[0].filters[11].value: needs at least one value
+channels[0].filters[12].value[0]: must be a string or a number
+channels[0].filters[13].ignore_case: must be true or false
+channels[0].filters[14].any[0].path: must be a string
+channels[0].filters[15]: an expression must be an object

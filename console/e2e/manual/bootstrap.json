@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "node": {
+    "node_id": "manual-check",
+    "display_name": "Manual check node",
+    "environment": "dev"
+  },
+  "paths": {
+    "state_directory": "state",
+    "log_directory": "logs"
+  },
+  "hosting": {
+    "shutdown_drain_seconds": 5
+  },
+  "runtime": {
+    "versions_kept": 20
+  },
+  "logging": {
+    "level": "info",
+    "retention_days": 7,
+    "ring_buffer_events": 20000
+  },
+  "diagnostics": {
+    "snapshot_interval_seconds": 1
+  },
+  "secrets": {
+    "provider": "keystore"
+  },
+  "backup": {
+    "directory": "backups"
+  }
+}

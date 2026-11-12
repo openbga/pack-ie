@@ -1,0 +1,26 @@
+{
+  "id": "logs",
+  "title": "Logs",
+  "summary": "Structured engine log.",
+  "routes": ["/logs"],
+  "sections": [
+    {
+      "title": "Filters and following",
+      "paragraphs": [
+        "Filter by level, event, channel, endpoint, text and time range. The event is the engine's event name, such as channel.started or delivery.state_changed; it is matched whole, so a part of a name finds nothing. Follow shows new events as they arrive; scrolling away from the newest event or opening a row pauses it and counts what you missed. Jump to live shows them and follows again. Open a row for its event, target, sequence, message and fields; its channel, endpoint and message link to their pages."
+      ]
+    },
+    {
+      "title": "When the engine goes away",
+      "paragraphs": [
+        "While the connection is down the page waits and follows again by itself. Events logged meanwhile are read from the engine's log and shown once, above a divider that gives the times. If the engine restarted, or its log no longer holds the whole outage, the divider says so; after a restart the earlier events can no longer be loaded."
+      ]
+    },
+    {
+      "title": "Limits",
+      "paragraphs": [
+        "The viewer holds the newest 10,000 rows; Load older fetches earlier events a page at a time. Once the window is full, Show events before opens a time range that ends before the oldest row. Message bodies are never logged."
+      ]
+    }
+  ]
+}

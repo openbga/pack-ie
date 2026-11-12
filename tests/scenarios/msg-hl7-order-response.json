@@ -1,0 +1,246 @@
+{
+ "format": 1,
+ "name": "msg-hl7-order-response",
+ "description": "A source with reply_type order_response answers OML^O33 with a commit ACK and an ORL^O34 application reply while other messages still get ACKs, and a destination accepting ORL as its acknowledgement records the order as acknowledged.",
+ "requirements": [
+  "PRO-03",
+  "MSG-03"
+ ],
+ "timeout_ms": 30000,
+ "resources": {
+  "ports": [
+   "in"
+  ]
+ },
+ "engine": {
+  "runtime": {
+   "schema_version": 1,
+   "endpoints": [
+    {
+     "endpoint_id": "src",
+     "label": "Source",
+     "kind": "tcp_listener",
+     "settings": {
+      "bind_address": "127.0.0.1",
+      "port": "${port.in}"
+     }
+    },
+    {
+     "endpoint_id": "dst",
+     "label": "Destination",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis.port}"
+     }
+    }
+   ],
+   "channels": [
+    {
+     "channel_id": "hl7-orders",
+     "label": "HL7 orders",
+     "kind": "message",
+     "retry": {
+      "initial_delay_ms": 200,
+      "max_delay_ms": 1000,
+      "multiplier": 2.0,
+      "jitter_percent": 0,
+      "max_consecutive_failures_before_alert": 3
+     },
+     "source": {
+      "endpoint": "src",
+      "protocol": "hl7_mllp",
+      "settings": {
+       "ack_mode": "enhanced",
+       "reply_type": "order_response",
+       "version": "2.5.1"
+      }
+     },
+     "destinations": [
+      {
+       "destination_id": "lis",
+       "label": "LIS",
+       "endpoint": "dst",
+       "protocol": "hl7_mllp",
+       "settings": {
+        "ack_mode": "original",
+        "ack_message_types": [
+         "ACK",
+         "ORL",
+         "ORR"
+        ],
+        "version": "2.5.1"
+       },
+       "mapping": null,
+       "delivery": {
+        "ack_timeout_seconds": 5
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "actors": {
+  "inst": {
+   "kind": "tcp_client"
+  },
+  "lis": {
+   "kind": "tcp_server"
+  }
+ },
+ "no_body_leak": [
+  "PID-TEST-502",
+  "PID-TEST-501",
+  "TEST^PATIENT"
+ ],
+ "steps": [
+  {
+   "do": "accept",
+   "actor": "lis"
+  },
+  {
+   "do": "connect",
+   "actor": "inst",
+   "host": "127.0.0.1",
+   "port": "${port.in}"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "0b 4d 53 48 7c 5e 7e 5c 26 7c 4c 49 53 7c 48 4f 53 50 7c 56 4c 58 7c 4c 41 42 7c 32 30 32 36 30 31 30 31 31 32 30 30 30 30 7c 7c 4f 4d 4c 5e 4f 33 33 5e 4f 4d 4c 5f 4f 33 33 7c 4f 52 44 2d 33 7c 50 7c 32 2e 35 2e 31 7c 7c 7c 41 4c 7c 41 4c 0d 50 49 44 7c 31 7c 7c 50 49 44 2d 54 45 53 54 2d 35 30 32 7c 7c 54 45 53 54 5e 50 41 54 49 45 4e 54 7c 7c 31 39 37 30 30 31 30 31 7c 46 0d 53 50 4d 7c 31 7c 53 49 44 2d 30 35 30 32 7c 7c 53 45 52 0d 4f 52 43 7c 4e 57 7c 50 4c 2d 31 0d 4f 42 52 7c 31 7c 50 4c 2d 31 7c 7c 47 4c 55 5e 47 6c 75 63 6f 73 65 5e 4c 0d 1c 0d"
+  },
+  {
+   "do": "expect_message",
+   "actor": "inst",
+   "protocol": "hl7_mllp",
+   "reply": "none",
+   "assert": [
+    {
+     "path": "MSH.9.1",
+     "equals": "ACK"
+    },
+    {
+     "path": "MSA.1",
+     "equals": "CA"
+    },
+    {
+     "path": "MSA.2",
+     "equals": "ORD-3"
+    }
+   ]
+  },
+  {
+   "do": "expect_message",
+   "actor": "inst",
+   "protocol": "hl7_mllp",
+   "reply": "none",
+   "assert": [
+    {
+     "path": "MSH.9",
+     "equals": "ORL^O34^ORL_O34"
+    },
+    {
+     "path": "MSA.1",
+     "equals": "AA"
+    },
+    {
+     "path": "MSA.2",
+     "equals": "ORD-3"
+    }
+   ]
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "0b 4d 53 48 7c 5e 7e 5c 26 7c 4c 49 53 7c 48 4f 53 50 7c 56 4c 58 7c 4c 41 42 7c 32 30 32 36 30 31 30 31 31 32 30 30 30 30 7c 7c 4f 52 55 5e 52 30 31 7c 4f 52 55 2d 33 7c 50 7c 32 2e 35 2e 31 7c 7c 7c 41 4c 7c 41 4c 0d 50 49 44 7c 31 7c 7c 50 49 44 2d 54 45 53 54 2d 35 30 31 7c 7c 54 45 53 54 5e 50 41 54 49 45 4e 54 7c 7c 31 39 37 30 30 31 30 31 7c 46 0d 4f 42 52 7c 31 7c 7c 53 49 44 2d 30 35 30 31 7c 47 4c 55 5e 47 6c 75 63 6f 73 65 0d 4f 42 58 7c 31 7c 4e 4d 7c 47 4c 55 5e 47 6c 75 63 6f 73 65 7c 7c 39 35 7c 6d 67 2f 64 4c 7c 37 30 2d 31 31 30 7c 4e 7c 7c 7c 46 0d 1c 0d"
+  },
+  {
+   "do": "expect_message",
+   "actor": "inst",
+   "protocol": "hl7_mllp",
+   "reply": "none",
+   "assert": [
+    {
+     "path": "MSH.9.1",
+     "equals": "ACK"
+    },
+    {
+     "path": "MSA.1",
+     "equals": "CA"
+    },
+    {
+     "path": "MSA.2",
+     "equals": "ORU-3"
+    }
+   ]
+  },
+  {
+   "do": "expect_message",
+   "actor": "inst",
+   "protocol": "hl7_mllp",
+   "reply": "none",
+   "assert": [
+    {
+     "path": "MSH.9.1",
+     "equals": "ACK"
+    },
+    {
+     "path": "MSA.1",
+     "equals": "AA"
+    },
+    {
+     "path": "MSA.2",
+     "equals": "ORU-3"
+    }
+   ]
+  },
+  {
+   "do": "expect_message",
+   "actor": "lis",
+   "protocol": "hl7_mllp",
+   "reply": "none",
+   "assert": [
+    {
+     "path": "MSH.10",
+     "equals": "ORD-3"
+    }
+   ]
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "0b 4d 53 48 7c 5e 7e 5c 26 7c 4c 49 53 7c 48 4f 53 50 7c 56 4c 58 7c 4c 41 42 7c 32 30 32 36 30 31 30 31 31 32 30 30 30 31 7c 7c 4f 52 4c 5e 4f 33 34 5e 4f 52 4c 5f 4f 33 34 7c 52 2d 4f 52 44 2d 33 7c 50 7c 32 2e 35 2e 31 0d 4d 53 41 7c 41 41 7c 4f 52 44 2d 33 0d 1c 0d"
+  },
+  {
+   "do": "expect_message",
+   "actor": "lis",
+   "protocol": "hl7_mllp",
+   "reply": "none",
+   "assert": [
+    {
+     "path": "MSH.10",
+     "equals": "ORU-3"
+    }
+   ]
+  },
+  {
+   "do": "send",
+   "actor": "lis",
+   "hex": "0b 4d 53 48 7c 5e 7e 5c 26 7c 4c 49 53 7c 48 4f 53 50 7c 56 4c 58 7c 4c 41 42 7c 32 30 32 36 30 31 30 31 31 32 30 30 30 31 7c 7c 41 43 4b 7c 52 2d 4f 52 55 2d 33 7c 50 7c 32 2e 35 2e 31 0d 4d 53 41 7c 41 41 7c 4f 52 55 2d 33 0d 1c 0d"
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "channel_id": "hl7-orders"
+   },
+   "count": 2,
+   "each": {
+    "state": "acknowledged",
+    "total_attempts": 1
+   }
+  }
+ ]
+}

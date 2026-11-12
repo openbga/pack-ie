@@ -1,0 +1,27 @@
+{
+  "id": "notifications",
+  "title": "Notifications",
+  "summary": "Whether alert messages get through, where they go, and a test message.",
+  "routes": ["/settings/notifications"],
+  "sections": [
+    {
+      "title": "Status",
+      "paragraphs": [
+        "Says No target is failing, or names each failing target with the engine's last error, when it first failed and what to do next, with a link to the Alerts page. A target is failing from its first failed send until a later send to it succeeds, a test message included; the alert clears by itself then."
+      ]
+    },
+    {
+      "title": "Targets",
+      "paragraphs": [
+        "Lists the e-mail relay and the webhook the engine sends alerts to, with the rate limit and the alert severities each one gets. They come from bootstrap.json on the lab computer and are read-only here: change them there and restart the engine. Without targets, notifications are off. If the console cannot read the bootstrap file, the targets cannot be listed, but a test can still be sent.",
+        "Only the names of secrets are shown, never values. A secret that is not in the store is flagged with a link to Secrets: a send fails until it is stored. A webhook shows its host only, because the rest of its address can carry a token."
+      ]
+    },
+    {
+      "title": "Send test",
+      "paragraphs": [
+        "Asks first, then sends one test message (code test, severity info, nothing from messages or channels) to every target and shows each target's answer: accepted, or the reason it failed. A failed send is not retried. The test is recorded in the audit log with your account, and is refused while the audit log cannot be written. The result stays on the page until the next test."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# Build-time flags shared by every build of this repository (developer machines, CI, release).
+# SQLite's global memory-statistics mutex is taken on every allocation; nothing in PACK-IE reads
+# those statistics, and the store's single writer spends most of its time waiting on it under
+# load (docs/architecture.md §4). Off, the 50-channel durable throughput rises ~60 %.
+[env]
+LIBSQLITE3_FLAGS = "-DSQLITE_DEFAULT_MEMSTATUS=0"

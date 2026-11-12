@@ -1,0 +1,14 @@
+.title {
+  display: block;
+}
+
+/* Under the title, and not part of what the identifier styling underlines. */
+.detail {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

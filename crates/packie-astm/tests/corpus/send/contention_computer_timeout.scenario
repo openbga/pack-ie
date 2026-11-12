@@ -1,0 +1,17 @@
+# The computer yielded but the instrument's ENQ never came: after 20 s the line is neutral and ENQ is retried.
+record H|\^&|||PACKIE^1.0
+submit
+expect write ENQ
+expect timer 15
+peer ENQ
+expect timer 20
+tick
+expect write ENQ
+expect timer 15
+peer ACK
+expect frame 1 final H|\^&|||PACKIE^1.0<CR>
+expect timer 15
+peer ACK
+expect stop_timer
+expect write EOT
+expect sent

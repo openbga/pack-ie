@@ -1,0 +1,74 @@
+.help {
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (max-width: 40rem) {
+  .help {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.topics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.topic {
+  padding: var(--space-1) var(--space-2);
+  border-inline-start: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.topic:hover {
+  background: var(--color-surface-hover);
+}
+
+.topic[aria-current="true"] {
+  border-inline-start-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  font-weight: var(--font-weight-semibold);
+}
+
+.topic[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* The steps of a procedure; each is a sentence and, where there is one, a command to copy. */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-left: var(--space-5);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* A command to copy: the text selectable on its own line, the copy button beside it. */
+.command {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+}
+
+.commandText {
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: var(--font-family-mono);
+  overflow-wrap: anywhere;
+  user-select: all;
+}

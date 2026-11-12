@@ -1,0 +1,31 @@
+#!/bin/bash
+# Installer postinstall: write the default bootstrap if none exists, then install and start
+# the service. Runs as root; the bootstrap template sits next to this script.
+set -eu
+
+SUPPORT_DIR="/Library/Application Support/Positive ACK"
+BOOTSTRAP="$SUPPORT_DIR/bootstrap.json"
+PACKIE=/usr/local/bin/packie
+PLIST=/Library/LaunchDaemons/org.openbga.positiveack.plist
+TEMPLATE="$(cd "$(dirname "$0")" && pwd)/bootstrap.json"
+
+if [ ! -e "$BOOTSTRAP" ]; then
+    mkdir -p "$SUPPORT_DIR"
+    install -m 0644 "$TEMPLATE" "$BOOTSTRAP"
+fi
+
+# Upgrade: remove the previous registration so the new binary is started cleanly.
+if [ -e "$PLIST" ]; then
+    "$PACKIE" --bootstrap "$BOOTSTRAP" service uninstall || echo "packie: previous service could not be removed; continuing" >&2
+fi
+
+# Installer.app runs this as root without sudo: name the signed-in user so `service install`
+# adds them to the packie group and their console can attach.
+if [ -z "${SUDO_USER:-}" ]; then
+    CONSOLE_USER="$(stat -f%Su /dev/console 2>/dev/null || true)"
+    if [ -n "$CONSOLE_USER" ] && [ "$CONSOLE_USER" != root ]; then
+        export SUDO_USER="$CONSOLE_USER"
+    fi
+fi
+
+"$PACKIE" --bootstrap "$BOOTSTRAP" service install

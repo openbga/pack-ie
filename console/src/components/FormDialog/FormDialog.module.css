@@ -1,0 +1,6 @@
+/* The note takes the start of the action bar and pushes the buttons to its end. */
+.footnote {
+  align-self: center;
+  margin-inline-end: auto;
+  color: var(--color-text-muted);
+}

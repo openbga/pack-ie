@@ -1,0 +1,26 @@
+{
+  "id": "au-settings",
+  "title": "AU instrument settings",
+  "summary": "The instrument's parameter sheet, copied into the connector.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "Copy the sheet",
+      "paragraphs": [
+        "An AU connector has no defaults, except the block timeout: copy every setting from the instrument's online parameter sheet. Control bytes are numbers separated by commas, such as 2 or 13, 10. A stored message keeps the settings it arrived with; changing them later never reinterprets it."
+      ]
+    },
+    {
+      "title": "Instrument and framing",
+      "paragraphs": [
+        "Profile is the instrument model (AU400 or AU640). Start bytes and End bytes are one or two numbers from 1 to 31, never 6 (ACK) or 21 (NAK). Check byte (BCC) adds one check byte to each frame. ETB between blocks is allowed only when the end bytes are 3. Maximum wire length is 256, 512 or 1024 bytes. Class a sends no ACK or NAK when receiving; class b sends ACK after the message is stored."
+      ]
+    },
+    {
+      "title": "Message format and timing",
+      "paragraphs": [
+        "Unit number: incoming messages carry a two-digit unit number. Rack digits are 0, 4 or 5; sample ID digits 1 to 20; result digits 6 or 9. Sex, Age and Month say what the patient header holds, and the six patient information fields take 0 to 20 digits each. Frame timeout is the time allowed for one frame from its first byte; block timeout is the wait for the next block of an unfinished sample. Both are 100 to 9900 ms in steps of 100."
+      ]
+    }
+  ]
+}

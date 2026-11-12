@@ -1,0 +1,5 @@
+# cargo-fuzz needs a nightly compiler (sanitizer and coverage instrumentation). Pinned to a
+# dated nightly so fuzz runs are reproducible; bump the date deliberately.
+[toolchain]
+channel = "nightly-2026-11-06"
+profile = "minimal"

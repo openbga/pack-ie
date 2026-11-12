@@ -1,0 +1,26 @@
+{
+  "id": "transcript",
+  "title": "Live transcript",
+  "summary": "Watching the bytes of one channel while troubleshooting.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "Starting and stopping",
+      "paragraphs": [
+        "The transcript is off until you press Start live transcript on a channel's page. It stops when you press Stop or the console disconnects. Only one viewer can watch a channel at a time; another is told that it is in use."
+      ]
+    },
+    {
+      "title": "What it shows",
+      "paragraphs": [
+        "A bridge has two panes, A → B and B → A. A message channel has Source and Destinations. Source shows what the source sent (← Received) and how the engine answered it (→ Response). Destinations shows what the engine sent (→ Sent) and what the destination answered (← Reply), each tagged with its destination's name. Each pane keeps the newest 1,000 segments, up to 1 MiB, each with the time it was captured. Control characters are shown by name; Show hex adds the bytes. Freeze stops the display while capture goes on, and Unfreeze shows the newest. Clear empties the panes."
+      ]
+    },
+    {
+      "title": "Where it goes",
+      "paragraphs": [
+        "A transcript lives only in memory and is sent only to this console. It is never stored, logged or sent anywhere else. Copy puts what is shown on the clipboard; that is your choice, and message bodies can hold patient information."
+      ]
+    }
+  ]
+}

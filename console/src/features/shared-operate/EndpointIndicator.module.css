@@ -1,0 +1,42 @@
+/* One line: the side and the state keep their words whole, the name gives way. */
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  max-width: 100%;
+  color: var(--tone-text);
+  white-space: nowrap;
+}
+
+.indicator[data-tone="neutral"] {
+  color: inherit;
+}
+
+.icon {
+  width: var(--font-size-sm);
+  height: var(--font-size-sm);
+  flex: none;
+}
+
+.indicator[data-tone="neutral"] .icon {
+  color: var(--color-text-muted);
+}
+
+.role {
+  flex: none;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Truncates with an ellipsis; the full label is the title. */
+.name {
+  flex: 0 1 auto;
+  min-width: 4ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state {
+  flex: none;
+  color: var(--color-text-muted);
+}

@@ -1,0 +1,41 @@
+---
+source: crates/packie-transform/tests/mapping.rs
+expression: "text.join(\"\\n\")"
+---
+mapping.tables.bad: a code table is an object of code to text
+mapping.tables.flags.x: must be a string
+mapping.rules[0].op: unknown op; use copy, constant, lookup, concat, datetime, calculate, when, for_each, append or sequence
+mapping.rules[1].from: invalid path at position 4: expected a field number from 1
+mapping.rules[2].to: is required
+mapping.rules[3].extra: unknown field
+mapping.rules[3].from: invalid path at position 0: expected a three-character segment name such as PID
+mapping.rules[4].from: `$.` paths are only valid inside for_each
+mapping.rules[5].to: MSH.1 and MSH.2 are fixed by the encoding characters
+mapping.rules[6].table: unknown table `nope`; defined tables: [ci, flags]
+mapping.rules[7].on_missing: must be one of error, keep, default, skip
+mapping.rules[8].default: is required with on_missing `default`
+mapping.rules[9].default: is only used with on_missing `default`
+mapping.rules[10].table: table `ci` has codes that differ only by case; they cannot be matched ignoring case
+mapping.rules[11].parts: needs at least one part
+mapping.rules[12].parts[0]: a part has exactly one of `from` and `text`
+mapping.rules[12].parts[1]: a part has exactly one of `from` and `text`
+mapping.rules[12].parts[2]: must be an object
+mapping.rules[13].input: invalid date format at position 0: letters that are not tokens must be quoted, for example 'T'
+mapping.rules[13].from_timezone: `Mars/Base` is not a time zone known to this system
+mapping.rules[13].to_timezone: must be a string
+mapping.rules[14].condition: is required
+mapping.rules[15].condition.op: unknown operator; use one of equals, not_equals, in, not_in, starts_with, contains, matches, exists, not_exists, gt, gte, lt, lte
+mapping.rules[15].then[0].op: unknown op; use copy, constant, lookup, concat, datetime, calculate, when, for_each, append or sequence
+mapping.rules[15].else: must be an array of rules
+mapping.rules[16].over: expected a three-character segment name such as OBX
+mapping.rules[16].into: a message has one MSH
+mapping.rules[16].rules[0]: for_each cannot be inside for_each or append
+mapping.rules[16].rules[1].from: invalid path at position 2: expected a field number from 1
+mapping.rules[17].rules: is required
+mapping.rules[18].op: sequence is only valid inside for_each or append
+mapping.rules[18].start: must be an integer from 0 to 999999999
+mapping.rules[19].op: sequence is only valid inside for_each or append
+mapping.rules[19].to: `$.` paths are only valid inside for_each
+mapping.rules[20].value: is required
+mapping.rules[21].op: is required and must be a string
+mapping.rules[22]: a rule must be an object

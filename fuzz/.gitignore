@@ -1,0 +1,5 @@
+/target/
+# libFuzzer's working corpus and crash artifacts; seeds and minimized regressions live in corpus/.
+/work/
+/artifacts/
+/coverage/

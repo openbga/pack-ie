@@ -1,0 +1,331 @@
+{
+ "format": 1,
+ "name": "msg-au-mapping",
+ "description": "AU results received as framed wire text are mapped with the AU-to-HL7 preset into the documented ORU^R01.",
+ "requirements": [
+  "MSG-07",
+  "MSG-03"
+ ],
+ "timeout_ms": 30000,
+ "resources": {
+  "ports": [
+   "in"
+  ]
+ },
+ "engine": {
+  "runtime": {
+   "schema_version": 1,
+   "endpoints": [
+    {
+     "endpoint_id": "src",
+     "label": "Source",
+     "kind": "tcp_listener",
+     "settings": {
+      "bind_address": "127.0.0.1",
+      "port": "${port.in}"
+     }
+    },
+    {
+     "endpoint_id": "dst",
+     "label": "Destination",
+     "kind": "tcp_client",
+     "settings": {
+      "host": "127.0.0.1",
+      "port": "${actor.lis.port}"
+     }
+    }
+   ],
+   "channels": [
+    {
+     "channel_id": "preset",
+     "label": "AU results to HL7 ORU^R01",
+     "kind": "message",
+     "retry": {
+      "initial_delay_ms": 200,
+      "max_delay_ms": 1000,
+      "multiplier": 2.0,
+      "jitter_percent": 0,
+      "max_consecutive_failures_before_alert": 3
+     },
+     "source": {
+      "endpoint": "src",
+      "protocol": "au",
+      "settings": {
+       "profile": "au640",
+       "framing": {
+        "start": [
+         2
+        ],
+        "end": [
+         3
+        ],
+        "bcc": false,
+        "use_etb": false,
+        "max_wire_len": 256,
+        "class": "a"
+       },
+       "format": {
+        "unit_no": true,
+        "rack_digits": 4,
+        "sample_id_digits": 8,
+        "sex": false,
+        "age": false,
+        "month": false,
+        "patient_info_digits": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "result_digits": 6,
+        "test_code_digits": 2
+       },
+       "frame_timeout_ms": 5000
+      }
+     },
+     "destinations": [
+      {
+       "destination_id": "lis",
+       "label": "LIS",
+       "endpoint": "dst",
+       "protocol": "hl7_mllp",
+       "settings": {
+        "version": "2.5.1",
+        "ack_mode": "original",
+        "sending_application": "PACKIE",
+        "sending_facility": "LAB",
+        "receiving_application": "LIS",
+        "receiving_facility": "HOSP",
+        "processing_id": "P"
+       },
+       "mapping": {
+        "tables": {
+         "tests": {},
+         "flags": {}
+        },
+        "rules": [
+         {
+          "op": "constant",
+          "value": "ORU^R01",
+          "to": "MSH.9"
+         },
+         {
+          "op": "copy",
+          "from": "sample_id",
+          "to": "OBR.3"
+         },
+         {
+          "op": "for_each",
+          "over": "test",
+          "into": "OBX",
+          "rules": [
+           {
+            "op": "sequence",
+            "to": "$.1"
+           },
+           {
+            "op": "constant",
+            "value": "NM",
+            "to": "$.2"
+           },
+           {
+            "op": "lookup",
+            "from": "$.code",
+            "table": "tests",
+            "to": "$.3",
+            "on_missing": "keep"
+           },
+           {
+            "op": "when",
+            "condition": {
+             "path": "$.value",
+             "op": "matches",
+             "value": "^ *0*\\."
+            },
+            "then": [
+             {
+              "op": "concat",
+              "parts": [
+               {
+                "text": "0"
+               },
+               {
+                "from": "$.value",
+                "steps": [
+                 {
+                  "step": "trim"
+                 },
+                 {
+                  "step": "strip_leading",
+                  "chars": "0"
+                 }
+                ]
+               }
+              ],
+              "to": "$.5"
+             }
+            ],
+            "else": [
+             {
+              "op": "copy",
+              "from": "$.value",
+              "steps": [
+               {
+                "step": "trim"
+               },
+               {
+                "step": "strip_leading",
+                "chars": "0"
+               }
+              ],
+              "to": "$.5"
+             }
+            ]
+           },
+           {
+            "op": "lookup",
+            "from": "$.flags",
+            "table": "flags",
+            "to": "$.8",
+            "on_missing": "skip"
+           }
+          ]
+         }
+        ]
+       },
+       "delivery": {
+        "max_attempts": 3,
+        "send_timeout_seconds": 5,
+        "ack_timeout_seconds": 5,
+        "retry": {
+         "initial_delay_ms": 200,
+         "max_delay_ms": 1000,
+         "multiplier": 2.0,
+         "jitter_percent": 0
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "actors": {
+  "inst": {
+   "kind": "tcp_client"
+  },
+  "lis": {
+   "kind": "tcp_server"
+  }
+ },
+ "no_body_leak": [
+  "PID-TEST-A",
+  "PID-TEST-B",
+  "TEST^ALPHA",
+  "TEST^BRAVO"
+ ],
+ "steps": [
+  {
+   "do": "accept",
+   "actor": "lis"
+  },
+  {
+   "do": "connect",
+   "actor": "inst",
+   "host": "127.0.0.1",
+   "port": "${port.in}"
+  },
+  {
+   "do": "send",
+   "actor": "inst",
+   "hex": "02 44 20 30 31 30 30 30 31 30 31 55 30 30 30 31 53 59 4e 30 30 30 34 32 20 20 20 20 45 30 31 30 30 35 2e 35 30 20 20 31 32 30 30 30 2e 34 30 48 20 03"
+  },
+  {
+   "do": "expect_message",
+   "actor": "lis",
+   "protocol": "hl7_mllp",
+   "reply": "AA",
+   "assert": [
+    {
+     "path": "MSH[0].3",
+     "equals": "PACKIE"
+    },
+    {
+     "path": "MSH[0].4",
+     "equals": "LAB"
+    },
+    {
+     "path": "MSH[0].5",
+     "equals": "LIS"
+    },
+    {
+     "path": "MSH[0].6",
+     "equals": "HOSP"
+    },
+    {
+     "path": "MSH[0].9",
+     "equals": "ORU^R01"
+    },
+    {
+     "path": "MSH[0].11",
+     "equals": "P"
+    },
+    {
+     "path": "MSH[0].12",
+     "equals": "2.5.1"
+    },
+    {
+     "path": "OBR[0].3",
+     "equals": "SYN00042"
+    },
+    {
+     "path": "OBX[0].1",
+     "equals": "1"
+    },
+    {
+     "path": "OBX[0].2",
+     "equals": "NM"
+    },
+    {
+     "path": "OBX[0].3",
+     "equals": "01"
+    },
+    {
+     "path": "OBX[0].5",
+     "equals": "5.50"
+    },
+    {
+     "path": "OBX[1].1",
+     "equals": "2"
+    },
+    {
+     "path": "OBX[1].2",
+     "equals": "NM"
+    },
+    {
+     "path": "OBX[1].3",
+     "equals": "12"
+    },
+    {
+     "path": "OBX[1].5",
+     "equals": "0.40"
+    }
+   ]
+  },
+  {
+   "do": "assert_store",
+   "actor": "engine",
+   "table": "deliveries",
+   "where": {
+    "channel_id": "preset"
+   },
+   "count": 1,
+   "each": {
+    "state": "acknowledged",
+    "total_attempts": 1
+   }
+  }
+ ]
+}

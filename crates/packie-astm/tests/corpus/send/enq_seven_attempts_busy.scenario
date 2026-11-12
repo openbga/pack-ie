@@ -1,0 +1,40 @@
+# Seven ENQ attempts, each answered by NAK, with a 4 s retry wait: the eighth is never sent.
+option max_enq_attempts 7
+option busy_retry_delay 4
+record H|\^&|||PACKIE^1.0
+submit
+expect write ENQ
+expect timer 15
+peer NAK
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+peer NAK
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+peer NAK
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+peer NAK
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+peer NAK
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+peer NAK
+expect timer 4
+tick
+expect write ENQ
+expect timer 15
+peer NAK
+expect stop_timer
+expect send_aborted establishment_failed

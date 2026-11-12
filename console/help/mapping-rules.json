@@ -1,0 +1,28 @@
+{
+  "id": "mapping-rules",
+  "title": "Mapping rules",
+  "summary": "How a destination builds the message it sends.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "Rules",
+      "paragraphs": [
+        "A destination's rules run from top to bottom and build a new message, which starts empty apart from generated header fields. copy writes the text at From to To, with a default for an empty source and Required to fail the message when it is empty. constant writes fixed text, concat joins paths and text, datetime reformats a date, calculate works out a number, when runs its rules if a condition holds. A message that fails a rule is kept and shows as failed; fix the mapping, apply, then resend."
+      ]
+    },
+    {
+      "title": "Code tables and lookup",
+      "paragraphs": [
+        "A code table turns one code into another text. A lookup rule reads one of that destination's tables, matching exactly or, with Ignore case, whatever the letter case, and says what happens when the code is missing: fail, keep the code, use the default, or write nothing.",
+        "Edit a table as text to paste two spreadsheet columns or copy it out: one code per line, the code and its text separated by a comma or tab. The dialog counts the rows it would add, change and remove first."
+      ]
+    },
+    {
+      "title": "Repeating records",
+      "paragraphs": [
+        "for_each repeats its rules for every occurrence of a record, such as R. By default each writes a new record, such as OBX: in the rules $. means the current input record in From and the new one in To. Rewrite in place (same HL7 or ASTM protocol) changes the existing records. Repetition of one field writes each as the next repetition of a field such as O.5, so $.5.4 is component 4 of repetition i.",
+        "append adds one new record after the existing ones, such as a calculated OBX; its To paths start with $. It is added only when every rule writes a value."
+      ]
+    }
+  ]
+}

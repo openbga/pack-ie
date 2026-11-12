@@ -1,0 +1,68 @@
+{
+  "format": 1,
+  "name": "bridge-listener-allowlist",
+  "description": "A listener rejects a peer outside its allowlist without changing channel state, and accepts it after the allowlist is changed by an apply.",
+  "requirements": ["EPT-02", "SEC-01", "ENG-03", "LOG-03"],
+  "timeout_ms": 40000,
+  "resources": { "ports": ["a"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "inst-side", "label": "Instrument side", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.a}", "allowed_peer_cidrs": ["10.99.0.0/16"] } },
+        { "endpoint_id": "sys-side", "label": "System side", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.sys.port}" } }
+      ],
+      "channels": [
+        { "channel_id": "bridge-allow", "label": "Allowlisted bridge", "kind": "bridge",
+          "endpoint_a": "inst-side", "endpoint_b": "sys-side",
+          "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+      ]
+    }
+  },
+  "actors": {
+    "bad": { "kind": "tcp_client" },
+    "good": { "kind": "tcp_client" },
+    "sys": { "kind": "tcp_server" }
+  },
+  "steps": [
+    { "do": "accept", "actor": "sys" },
+    { "do": "connect", "actor": "bad", "host": "127.0.0.1", "port": "${port.a}" },
+    { "do": "expect_closed", "actor": "bad" },
+    { "do": "assert_log", "actor": "engine", "event": "listener.peer_rejected",
+      "fields": { "channel_id": "bridge-allow", "error_code": "not_allowed", "peer": { "matches": "^127\\.0\\.0\\.1" } } },
+    { "do": "assert_alert", "actor": "engine", "code": "peer_rejected", "scope": { "endpoint": "inst-side" },
+      "expect": { "severity": "warning", "state": "active" } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-allow" },
+      "expect": { "session_state": "waiting_for_peer", "endpoint_a.state": "listening", "retry_count": 0 } },
+
+    { "do": "apply_config", "actor": "engine", "expect": "applied", "outcomes": { "bridge-allow": "restarted" },
+      "runtime": {
+        "schema_version": 1,
+        "endpoints": [
+          { "endpoint_id": "inst-side", "label": "Instrument side", "kind": "tcp_listener",
+            "settings": { "bind_address": "127.0.0.1", "port": "${port.a}", "allowed_peer_cidrs": ["127.0.0.1/32"] } },
+          { "endpoint_id": "sys-side", "label": "System side", "kind": "tcp_client",
+            "settings": { "host": "127.0.0.1", "port": "${actor.sys.port}" } }
+        ],
+        "channels": [
+          { "channel_id": "bridge-allow", "label": "Allowlisted bridge", "kind": "bridge",
+            "endpoint_a": "inst-side", "endpoint_b": "sys-side",
+            "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+            "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+        ]
+      } },
+
+    { "do": "expect_closed", "actor": "sys" },
+    { "do": "accept", "actor": "sys" },
+    { "do": "connect", "actor": "good", "host": "127.0.0.1", "port": "${port.a}" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-allow" },
+      "expect": { "state": "running", "session_state": "bridged", "config_version": 2 } },
+    { "do": "send", "actor": "good", "text": "authorized\n" },
+    { "do": "expect", "actor": "sys", "text": "authorized\n" },
+    { "do": "send", "actor": "sys", "text": "welcome\n" },
+    { "do": "expect", "actor": "good", "text": "welcome\n" }
+  ]
+}

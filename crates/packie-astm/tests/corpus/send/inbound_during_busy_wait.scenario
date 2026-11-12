@@ -1,0 +1,29 @@
+# While waiting to retry after a NAK, the peer starts its own transfer; it is received first
+# and the pending message is sent afterwards.
+record H|\^&|||PACKIE^1.0
+submit
+expect write ENQ
+expect timer 15
+peer NAK
+expect timer 10
+peer ENQ
+expect write ACK
+expect timer 30
+peer frame 1 final L|1|N<CR>
+expect persist
+expect timer 30
+persist
+expect write ACK
+expect timer 30
+peer EOT
+expect stop_timer
+expect received L|1|N
+expect write ENQ
+expect timer 15
+peer ACK
+expect frame 1 final H|\^&|||PACKIE^1.0<CR>
+expect timer 15
+peer ACK
+expect stop_timer
+expect write EOT
+expect sent

@@ -1,0 +1,60 @@
+.control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.input {
+  padding-right: var(--space-8);
+}
+
+/* The arrow looks and sits as a Select's does: no box or hover of its own. */
+.opener {
+  position: absolute;
+  right: var(--space-2);
+  display: flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.opener[data-disabled] {
+  cursor: not-allowed;
+}
+
+.option {
+  gap: var(--space-3);
+}
+
+.selectedIcon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+  visibility: hidden;
+}
+
+.option[data-selected] .selectedIcon {
+  visibility: visible;
+}
+
+/* The text that tells near-duplicates apart stays on one line; a long name wraps instead. */
+.description {
+  flex: none;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.empty {
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-muted);
+}
+
+/* The list scrolls itself, so the virtualizer can tell which options are in view. */
+.popover {
+  display: flex;
+  overflow: hidden;
+}

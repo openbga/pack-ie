@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "name": "actors-flow",
+  "description": "Backpressure with async sends, and HL7 and ASTM exchanges between two actors, next to an idle engine.",
+  "requirements": [],
+  "timeout_ms": 60000,
+  "engine": {
+    "runtime": { "schema_version": 1 }
+  },
+  "actors": {
+    "srv": { "kind": "tcp_server", "recv_buffer_bytes": 16384 },
+    "cli": { "kind": "tcp_client" }
+  },
+  "steps": [
+    { "do": "connect", "actor": "cli", "host": "${actor.srv.host}", "port": "${actor.srv.port}" },
+    { "do": "accept", "actor": "srv" },
+    { "do": "expect_open", "actor": "srv", "for_ms": 50 },
+
+    { "do": "pause_reading", "actor": "srv" },
+    { "do": "send", "actor": "cli", "async": true, "name": "big", "chunk_size": 65536, "generate": { "pattern": "counter32", "bytes": 16777216, "seed": 3 } },
+    { "do": "await_send", "actor": "cli", "name": "big", "expect": "pending", "for_ms": 400 },
+    { "do": "resume_reading", "actor": "srv" },
+    { "do": "await_send", "actor": "cli", "name": "big", "timeout_ms": 20000 },
+    { "do": "expect", "actor": "srv", "generate": { "pattern": "counter32", "bytes": 16777216, "seed": 3 }, "timeout_ms": 20000 },
+
+    { "do": "send_message", "actor": "cli", "protocol": "hl7_mllp", "async": true, "name": "oru", "expect_reply": ["CA", "AA"],
+      "segments": ["MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120000||ORU^R01|CTRL-1|P|2.5.1", "PID|1||PID-TEST-002||TEST^PATIENT", "OBX|1|NM|GLU^Glucose||95|mg/dL"] },
+    { "do": "expect_message", "actor": "srv", "protocol": "hl7_mllp", "reply": ["CA", "AA"], "reply_delay_ms": 20,
+      "assert": [{ "path": "MSH.10", "equals": "CTRL-1" }, { "path": "OBX.5", "equals": "95" }] },
+    { "do": "await_send", "actor": "cli", "name": "oru" },
+
+    { "do": "send_message", "actor": "cli", "protocol": "astm", "async": true, "name": "astm",
+      "records": ["H|\\^&|||SIM^1.0", "O|1|SID-0001||^^^GLU", "R|1|^^^GLU|95|mg/dL", "L|1|N"] },
+    { "do": "expect_message", "actor": "srv", "protocol": "astm", "reply": "ack", "nak_frames": 1,
+      "assert": [{ "path": "O.3", "equals": "SID-0001" }, { "path": "R.4", "equals": "95" }] },
+    { "do": "await_send", "actor": "cli", "name": "astm" },
+
+    { "do": "close", "actor": "srv", "abort": true },
+    { "do": "expect_closed", "actor": "cli" }
+  ]
+}

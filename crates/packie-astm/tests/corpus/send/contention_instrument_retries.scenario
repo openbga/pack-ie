@@ -1,0 +1,20 @@
+# Instrument role keeps priority: after contention it waits 1 s and sends ENQ again, which the computer acknowledges.
+option role instrument
+record H|\^&|||SYN-ANALYZER
+submit
+expect write ENQ
+expect timer 15
+peer ENQ
+expect timer 1
+# ENQs arriving during the wait are ignored.
+peer ENQ
+tick
+expect write ENQ
+expect timer 15
+peer ACK
+expect frame 1 final H|\^&|||SYN-ANALYZER<CR>
+expect timer 15
+peer ACK
+expect stop_timer
+expect write EOT
+expect sent

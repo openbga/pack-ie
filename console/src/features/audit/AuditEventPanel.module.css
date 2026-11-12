@@ -1,0 +1,20 @@
+.detailsTitle {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.detail dt {
+  color: var(--color-text-muted);
+}
+
+/* Operator text is the record: shown whole, line breaks kept, long words wrapped. */
+.detail dd {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

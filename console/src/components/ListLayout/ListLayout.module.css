@@ -1,0 +1,30 @@
+/* The list, and beside it the open record; takes the height left by the toolbar. */
+.layout {
+  display: flex;
+  flex: 1 1 0;
+  gap: var(--space-4);
+  min-height: calc(8 * var(--control-height));
+}
+
+/* A flex column, so the grid with `fill` takes the height left above the footer line. */
+.list {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  text-align: center;
+}

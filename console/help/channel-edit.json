@@ -1,0 +1,41 @@
+{
+  "id": "channel-edit",
+  "title": "Channel editor",
+  "summary": "Add or change a bridge or message channel.",
+  "routes": ["/channels/new", "/channels/:id/edit"],
+  "sections": [
+    {
+      "title": "Bridge",
+      "paragraphs": [
+        "A bridge passes bytes between Endpoint A and Endpoint B, picked from searchable lists and different, and never changes them. Pairing strategy: connect both sides independently; wait for the listening side, then pair (needs a listening endpoint); or receiver first, then sender, where you name the side that connects and receives first. Buffer size is per direction: when a buffer is full the bridge holds the sender back and reports pressure; it never drops data.",
+        "Tap framer counts and records messages (ASTM, AU or HL7 MLLP) without changing the bytes; the Message tap keeps recorded messages 30 days unless limited.",
+        "Reconnect policy: after a failure the bridge waits the initial backoff, then longer, up to the maximum. Leave maximum attempts empty to retry for ever."
+      ]
+    },
+    {
+      "title": "Message channel: source",
+      "paragraphs": [
+        "The source is where messages arrive: an endpoint, a protocol that suits it and the protocol's settings (see Protocol settings help). Detect duplicate messages is on by default: a repeat with the same source identity and content is recorded and shown, not processed twice. Source filters decide whether a message continues at all (see Filters and mappings help)."
+      ]
+    },
+    {
+      "title": "Message channel: destinations",
+      "paragraphs": [
+        "At least one destination is needed. Each has its own endpoint, protocol, filters, mapping and code tables, and retry policy. A disabled destination gets no new deliveries; the ones already queued wait. Retry works as for a bridge; after the maximum attempts a delivery is marked failed and waits for an operator.",
+        "Removing a saved destination asks first: its unresolved deliveries are closed when the change is applied."
+      ]
+    },
+    {
+      "title": "Retention",
+      "paragraphs": [
+        "Keep for (days) and Keep at most (messages); leave a field empty for no limit. Purging never removes a message with a delivery still to finish."
+      ]
+    },
+    {
+      "title": "Applying a change",
+      "paragraphs": [
+        "Applying restarts a changed channel, except a change only to its label, filters, mappings, retry policy or retention, which applies in place."
+      ]
+    }
+  ]
+}

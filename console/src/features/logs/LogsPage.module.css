@@ -1,0 +1,14 @@
+/* Errors and warnings read heavier than the rest of the stream. */
+.urgent {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Event names read as code: monospace; the grid truncates them and shows the rest on hover. */
+.eventName {
+  font-family: var(--font-family-mono);
+}
+
+/* A divider row: the connection to the engine was lost and came back. */
+.notice {
+  font-style: italic;
+}

@@ -1,0 +1,32 @@
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-6);
+}
+
+/* Rows group each label with its value without breaking the two-column grid. */
+.fact {
+  display: contents;
+}
+
+.facts dt {
+  color: var(--color-text-muted);
+}
+
+.facts dd {
+  overflow-wrap: anywhere;
+}
+
+.facts[data-layout="compact"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+}
+
+.facts[data-layout="compact"] > .fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  max-width: 100%;
+}

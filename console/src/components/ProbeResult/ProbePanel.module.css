@@ -1,0 +1,37 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.help {
+  color: var(--color-text-muted);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.summary {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* The same table as `MiniTable`, with row headers, and times that stay on one line. */
+.scroll {
+  composes: scroll from "../MiniTable/MiniTable.module.css";
+}
+
+.table {
+  composes: table from "../MiniTable/MiniTable.module.css";
+}
+
+.table [data-align="end"] {
+  white-space: nowrap;
+}
+
+.hint {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}

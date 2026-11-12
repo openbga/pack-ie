@@ -1,0 +1,16 @@
+#!/bin/sh
+# postrm: on purge only, delete the configuration, state and logs (they hold laboratory data).
+set -e
+
+case "$1" in
+    purge)
+        rm -rf /etc/packie /var/lib/packie /var/log/packie
+        ;;
+    remove | upgrade | failed-upgrade | abort-install | abort-upgrade | disappear) ;;
+    *)
+        echo "postrm called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

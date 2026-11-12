@@ -1,0 +1,15 @@
+/* An arrow and a short label, on one line. */
+.direction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.arrow {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+  color: var(--color-text-muted);
+}

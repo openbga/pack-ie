@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "name": "engine-idle",
+  "description": "An engine with no channels runs; actors talk to each other, files appear, and the engine restarts.",
+  "requirements": [],
+  "timeout_ms": 60000,
+  "resources": { "folders": ["out"] },
+  "engine": {
+    "runtime": { "schema_version": 1, "endpoints": [], "channels": [] }
+  },
+  "actors": {
+    "srv": { "kind": "tcp_server" },
+    "cli": { "kind": "tcp_client" },
+    "files": { "kind": "folder", "resource": "out" }
+  },
+  "steps": [
+    { "do": "assert_snapshot", "actor": "engine", "target": { "node": true },
+      "expect": { "node_state": "healthy", "channel_counts.running": 0, "channel_counts.retrying": 0 } },
+    { "do": "connect", "actor": "cli", "host": "${actor.srv.host}", "port": "${actor.srv.port}" },
+    { "do": "accept", "actor": "srv", "expect_peer": "127.0.0.1" },
+    { "do": "send", "actor": "cli", "text": "ping\n" },
+    { "do": "expect", "actor": "srv", "text": "ping\n" },
+    { "do": "send", "actor": "srv", "generate": { "pattern": "counter32", "bytes": 4096, "seed": 7 } },
+    { "do": "expect", "actor": "cli", "generate": { "pattern": "counter32", "bytes": 4096, "seed": 7 } },
+    { "do": "expect_no_data", "actor": "cli", "for_ms": 100 },
+    { "do": "close", "actor": "cli" },
+    { "do": "expect_closed", "actor": "srv" },
+    { "do": "write_file", "actor": "files", "name": "a.txt", "text": "hello" },
+    { "do": "expect_file", "actor": "files", "name": "a.txt", "equals": { "text": "hello" } },
+    { "do": "assert_log", "actor": "engine", "event": "node.started", "count": 1 },
+    { "do": "stop_engine", "actor": "engine" },
+    { "do": "assert_log", "actor": "engine", "event": "node.stopped", "count": 1 },
+    { "do": "start_engine", "actor": "engine" },
+    { "do": "assert_log", "actor": "engine", "event": "node.started", "count": 2 },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "node": true }, "expect": { "node_state": "healthy" } }
+  ]
+}

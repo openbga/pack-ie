@@ -1,0 +1,62 @@
+/* The "⋯" button sits inside a 32px grid row: a 24px target, the WCAG 2.2 minimum. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.trigger[data-hovered],
+.trigger[data-pressed] {
+  border-color: var(--color-border-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.trigger svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+.popover {
+  min-width: 12rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+}
+
+.menu {
+  padding: var(--space-1) 0;
+  outline: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-focused] {
+  background: var(--color-surface-hover);
+}
+
+.item[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+/* Destructive actions are red text; red fill is for status only. */
+.danger {
+  color: var(--tone-danger-text);
+}

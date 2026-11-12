@@ -1,0 +1,142 @@
+{
+  "format": 1,
+  "name": "config-apply-per-channel",
+  "description": "An apply restarts only the channel that changed, a label change is applied in place, and an invalid document is rejected with the previous configuration still active.",
+  "requirements": ["ENG-02", "ENG-03", "CON-06", "LOG-03"],
+  "timeout_ms": 45000,
+  "resources": { "ports": ["a1", "a2"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "inst-1", "label": "Instrument 1", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.a1}" } },
+        { "endpoint_id": "sys-1", "label": "System 1", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.sys1.port}" } },
+        { "endpoint_id": "inst-2", "label": "Instrument 2", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.a2}" } },
+        { "endpoint_id": "sys-2", "label": "System 2", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.sys2.port}" } }
+      ],
+      "channels": [
+        { "channel_id": "bridge-x", "label": "Bridge X", "kind": "bridge", "endpoint_a": "inst-1", "endpoint_b": "sys-1",
+          "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } },
+        { "channel_id": "bridge-y", "label": "Bridge Y", "kind": "bridge", "endpoint_a": "inst-2", "endpoint_b": "sys-2",
+          "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+          "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+      ]
+    }
+  },
+  "actors": {
+    "inst1": { "kind": "tcp_client" },
+    "sys1": { "kind": "tcp_server" },
+    "inst2": { "kind": "tcp_client" },
+    "sys2": { "kind": "tcp_server" }
+  },
+  "steps": [
+    { "do": "accept", "actor": "sys1" },
+    { "do": "accept", "actor": "sys2" },
+    { "do": "connect", "actor": "inst1", "host": "127.0.0.1", "port": "${port.a1}" },
+    { "do": "connect", "actor": "inst2", "host": "127.0.0.1", "port": "${port.a2}" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-x" }, "expect": { "state": "running", "config_version": 1 } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-y" }, "expect": { "state": "running", "config_version": 1 } },
+    { "do": "send", "actor": "inst1", "text": "x1\n" },
+    { "do": "expect", "actor": "sys1", "text": "x1\n" },
+
+    { "do": "apply_config", "actor": "engine", "expect": "applied",
+      "outcomes": { "bridge-x": "unchanged", "bridge-y": "restarted" },
+      "runtime": {
+        "schema_version": 1,
+        "endpoints": [
+          { "endpoint_id": "inst-1", "label": "Instrument 1", "kind": "tcp_listener",
+            "settings": { "bind_address": "127.0.0.1", "port": "${port.a1}" } },
+          { "endpoint_id": "sys-1", "label": "System 1", "kind": "tcp_client",
+            "settings": { "host": "127.0.0.1", "port": "${actor.sys1.port}" } },
+          { "endpoint_id": "inst-2", "label": "Instrument 2", "kind": "tcp_listener",
+            "settings": { "bind_address": "127.0.0.1", "port": "${port.a2}" } },
+          { "endpoint_id": "sys-2", "label": "System 2", "kind": "tcp_client",
+            "settings": { "host": "127.0.0.1", "port": "${actor.sys2.port}" } }
+        ],
+        "channels": [
+          { "channel_id": "bridge-x", "label": "Bridge X", "kind": "bridge", "endpoint_a": "inst-1", "endpoint_b": "sys-1",
+            "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+            "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } },
+          { "channel_id": "bridge-y", "label": "Bridge Y", "kind": "bridge", "endpoint_a": "inst-2", "endpoint_b": "sys-2",
+            "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+            "buffer": { "max_buffered_segments": 500, "max_bytes": 2097152, "overflow_action": "block_then_degrade", "block_timeout_ms": 2000 },
+            "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+        ]
+      } },
+
+    { "do": "expect_open", "actor": "inst1", "for_ms": 300 },
+    { "do": "send", "actor": "sys1", "text": "x2\n" },
+    { "do": "expect", "actor": "inst1", "text": "x2\n" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-x" }, "expect": { "state": "running", "config_version": 1, "retry_count": 0 } },
+    { "do": "expect_closed", "actor": "inst2" },
+    { "do": "expect_closed", "actor": "sys2" },
+    { "do": "accept", "actor": "sys2" },
+    { "do": "connect", "actor": "inst2", "host": "127.0.0.1", "port": "${port.a2}" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-y" },
+      "expect": { "state": "running", "session_state": "bridged", "config_version": 2, "buffers.a_to_b.max_bytes": 2097152 } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "node": true }, "expect": { "config.active_version": 2, "config.pending_version": null } },
+
+    { "do": "validate_config", "actor": "engine", "expect": "invalid", "problems": ["unknown_endpoint"],
+      "runtime": {
+        "schema_version": 1,
+        "endpoints": [
+          { "endpoint_id": "inst-1", "label": "Instrument 1", "kind": "tcp_listener",
+            "settings": { "bind_address": "127.0.0.1", "port": "${port.a1}" } }
+        ],
+        "channels": [
+          { "channel_id": "bridge-x", "label": "Bridge X", "kind": "bridge", "endpoint_a": "inst-1", "endpoint_b": "missing-endpoint" }
+        ]
+      } },
+    { "do": "apply_config", "actor": "engine", "expect": "rejected", "problems": ["unknown_endpoint"],
+      "runtime": {
+        "schema_version": 1,
+        "endpoints": [
+          { "endpoint_id": "inst-1", "label": "Instrument 1", "kind": "tcp_listener",
+            "settings": { "bind_address": "127.0.0.1", "port": "${port.a1}" } }
+        ],
+        "channels": [
+          { "channel_id": "bridge-x", "label": "Bridge X", "kind": "bridge", "endpoint_a": "inst-1", "endpoint_b": "missing-endpoint" }
+        ]
+      } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "node": true }, "expect": { "config.active_version": 2, "config.last_apply.result": "rejected" } },
+    { "do": "assert_alert", "actor": "engine", "code": "config_rejected", "expect": { "severity": "warning", "state": "active" } },
+    { "do": "assert_log", "actor": "engine", "event": "config.rejected" },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-x" }, "within_ms": 0, "expect": { "state": "running" } },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-y" }, "within_ms": 0, "expect": { "state": "running" } },
+
+    { "do": "apply_config", "actor": "engine", "expect": "applied",
+      "outcomes": { "bridge-x": "updated", "bridge-y": "unchanged" },
+      "runtime": {
+        "schema_version": 1,
+        "endpoints": [
+          { "endpoint_id": "inst-1", "label": "Instrument 1", "kind": "tcp_listener",
+            "settings": { "bind_address": "127.0.0.1", "port": "${port.a1}" } },
+          { "endpoint_id": "sys-1", "label": "System 1", "kind": "tcp_client",
+            "settings": { "host": "127.0.0.1", "port": "${actor.sys1.port}" } },
+          { "endpoint_id": "inst-2", "label": "Instrument 2", "kind": "tcp_listener",
+            "settings": { "bind_address": "127.0.0.1", "port": "${port.a2}" } },
+          { "endpoint_id": "sys-2", "label": "System 2", "kind": "tcp_client",
+            "settings": { "host": "127.0.0.1", "port": "${actor.sys2.port}" } }
+        ],
+        "channels": [
+          { "channel_id": "bridge-x", "label": "Bridge X renamed", "kind": "bridge", "endpoint_a": "inst-1", "endpoint_b": "sys-1",
+            "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+            "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } },
+          { "channel_id": "bridge-y", "label": "Bridge Y", "kind": "bridge", "endpoint_a": "inst-2", "endpoint_b": "sys-2",
+            "connection": { "connect_strategy": "parallel", "pairing_timeout_ms": 3000 },
+            "buffer": { "max_buffered_segments": 500, "max_bytes": 2097152, "overflow_action": "block_then_degrade", "block_timeout_ms": 2000 },
+            "retry": { "initial_delay_ms": 200, "max_delay_ms": 1000, "multiplier": 2.0, "jitter_percent": 0, "max_consecutive_failures_before_alert": 3 } }
+        ]
+      } },
+    { "do": "assert_alert", "actor": "engine", "code": "config_rejected", "present": false },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "bridge-x" }, "expect": { "label": "Bridge X renamed", "state": "running" } },
+    { "do": "expect_open", "actor": "inst1", "for_ms": 300 },
+    { "do": "send", "actor": "inst1", "text": "x3\n" },
+    { "do": "expect", "actor": "sys1", "text": "x3\n" }
+  ]
+}

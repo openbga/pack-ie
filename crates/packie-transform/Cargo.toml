@@ -1,0 +1,25 @@
+[package]
+name = "packie-transform"
+description = "Field paths, mappings, code tables and filters over parsed protocol models"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+jiff = { workspace = true }
+# Linear-time regular expressions for the `matches` filter operator (configuration.md §8.1).
+regex = "1.13"
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+packie-astm = { path = "../packie-astm" }
+packie-au = { path = "../packie-au" }
+packie-hl7 = { path = "../packie-hl7" }
+
+[dev-dependencies]
+insta = { workspace = true }
+proptest = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "endpoints": [
+    {
+      "endpoint_id": "hema-serial",
+      "label": "Hematology analyzer (COM3)",
+      "kind": "serial",
+      "settings": {
+        "port_name": "COM3",
+        "baud_rate": 9600,
+        "data_bits": 8,
+        "parity": "none",
+        "stop_bits": "one",
+        "flow_control": "none"
+      }
+    },
+    {
+      "endpoint_id": "lis-bridge-port",
+      "label": "LIS bridge port",
+      "kind": "tcp_listener",
+      "settings": {
+        "bind_address": "127.0.0.1",
+        "port": 5100
+      }
+    },
+    {
+      "endpoint_id": "chem-astm",
+      "label": "Chemistry analyzer (ASTM over TCP)",
+      "kind": "tcp_listener",
+      "settings": {
+        "bind_address": "0.0.0.0",
+        "port": 5200,
+        "allowed_peer_cidrs": ["192.168.10.0/24"]
+      }
+    },
+    {
+      "endpoint_id": "lis-hl7",
+      "label": "LIS HL7 inbound",
+      "kind": "tcp_client",
+      "settings": {
+        "host": "127.0.0.1",
+        "port": 6661
+      }
+    }
+  ],
+  "channels": [
+    {
+      "channel_id": "hema-bridge",
+      "label": "Hematology analyzer to LIS",
+      "kind": "bridge",
+      "endpoint_a": "hema-serial",
+      "endpoint_b": "lis-bridge-port",
+      "connection": {
+        "connect_strategy": "parallel",
+        "pairing_timeout_ms": 5000
+      },
+      "tap": {
+        "framer": "astm"
+      }
+    },
+    {
+      "channel_id": "chem-results",
+      "label": "Chemistry results to LIS",
+      "kind": "message",
+      "source": {
+        "endpoint": "chem-astm",
+        "protocol": "astm",
+        "settings": {}
+      },
+      "destinations": [
+        {
+          "destination_id": "lis",
+          "label": "LIS (HL7 ORU)",
+          "endpoint": "lis-hl7",
+          "protocol": "hl7_mllp",
+          "settings": {
+            "ack_mode": "original",
+            "sending_application": "PACKIE",
+            "receiving_application": "LIS"
+          },
+          "mapping": {
+            "rules": [
+              { "op": "constant", "value": "ORU^R01", "to": "MSH.9" },
+              { "op": "copy", "from": "P.3", "to": "PID.3" },
+              { "op": "copy", "from": "O.3", "to": "OBR.3" }
+            ]
+          },
+          "delivery": {
+            "max_attempts": 10
+          }
+        }
+      ],
+      "retention": {
+        "max_age_days": 90
+      }
+    }
+  ]
+}

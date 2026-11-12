@@ -1,0 +1,37 @@
+/* Same box for every state, so grid rows keep their height; shape and text carry the state. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--tone-border);
+  border-radius: var(--radius-full);
+  background: var(--tone-bg);
+  color: var(--tone-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 20px;
+  /* A long state wraps onto a second line inside its chip rather than being cut off. */
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.icon {
+  flex: none;
+  width: var(--font-size-sm);
+  height: var(--font-size-sm);
+}
+
+.icon[data-filled] {
+  fill: currentcolor;
+}
+
+/* Plain text with a muted shape. */
+.chip[data-tone="neutral"] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.chip[data-tone="neutral"] .icon {
+  color: var(--color-text-muted);
+}

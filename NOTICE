@@ -1,0 +1,31 @@
+Positive ACK Interface Engine (PACK-IE)
+https://github.com/openbga/pack-ie
+
+Copyright (C) 2026 BGASoft Inc. and OpenBGA contributors.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License, version 3 only
+(AGPL-3.0-only), as published by the Free Software Foundation. See LICENSE.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+Trademarks
+
+OpenBGA and the OpenBGA product names and logos are trademarks of BGASoft Inc.
+The license does not grant permission to use them (AGPL-3.0 section 7(e)),
+except as needed to describe the origin of the software.
+
+Material derived from Steady State LIMS
+
+The ASTM codec (crates/packie-astm), the AU codec (crates/packie-au) and the
+console component kit (console/src/components) derive from Steady State LIMS,
+https://github.com/openbga/steady-state-lims, Copyright 2026 Steady State LIMS
+contributors, published under the GNU General Public License, version 3 only.
+They are combined with this work as section 13 of that license permits.
+
+Third-party material
+
+Third-party material included in this repository retains its own copyright and
+license terms.

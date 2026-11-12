@@ -1,0 +1,170 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Wraps the fields for their input events; they stay the form's flex items. */
+.fields {
+  display: contents;
+}
+
+/* Fields side by side where they fit. */
+.fieldGrid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+/* A titled group in a long form; the rule above the title separates it from the last group. */
+.fieldSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-4) 0 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.fieldSection:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Inside a section, a lone short field keeps its column width instead of the whole row. */
+.fieldSection .fieldGrid {
+  grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
+}
+
+.fieldSectionTitle {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.form[data-sticky-actions] > .actions {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+/* Keyboard focus and validation scrolling leave room for wrapped task actions. */
+.form[data-sticky-actions] :is(input, textarea, select, button, [tabindex]) {
+  scroll-margin-block-end: calc(var(--space-12) * 3);
+}
+
+@media (max-height: 600px) {
+  .form[data-sticky-actions] > .actions {
+    position: static;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.label {
+  font-weight: var(--font-weight-semibold);
+}
+
+.required {
+  color: var(--tone-danger-text);
+}
+
+.description {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.error {
+  color: var(--tone-danger-text);
+  font-size: var(--font-size-sm);
+}
+
+/* Shared by the input-like controls: TextField's input and Select's trigger. */
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: start;
+}
+
+/* A field with a button inside it, such as a date picker: the button sits at the end. */
+.adorned {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.adorned > .control {
+  padding-right: var(--space-8);
+}
+
+.adorned > :last-child:not(.control) {
+  position: absolute;
+  right: var(--space-1);
+}
+
+.control[data-focused],
+.control[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 0;
+}
+
+.control[data-invalid] {
+  border-color: var(--tone-danger-border);
+}
+
+/* An invalid field's name turns red with its border and message, so it stands out in long forms. */
+.field[data-invalid] > .label {
+  color: var(--tone-danger-text);
+}
+
+.control[data-disabled] {
+  background: var(--color-surface-sunken);
+  cursor: not-allowed;
+}
+
+/* Collection filters keep their visible label beside the control, then wrap as needed. */
+.field[data-layout="inline"] {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field[data-layout="inline"] > .control {
+  width: auto;
+  flex: 1 1 auto;
+}
+
+.field[data-layout="inline"] > .description,
+.field[data-layout="inline"] > .error {
+  flex-basis: 100%;
+}

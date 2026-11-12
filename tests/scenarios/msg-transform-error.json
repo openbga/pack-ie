@@ -1,0 +1,119 @@
+{
+  "format": 1,
+  "name": "msg-transform-error",
+  "description": "A mapping error keeps the message and acknowledges the sender, fails only that delivery with an alert, and is fixed by an in-place mapping change followed by a resend.",
+  "requirements": ["MSG-02", "MSG-03", "MSG-07", "ENG-03", "LOG-03"],
+  "timeout_ms": 45000,
+  "resources": { "ports": ["in"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "hl7-in", "label": "HL7 in", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.in}" } },
+        { "endpoint_id": "lis-out", "label": "LIS HL7 interface", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.lis.port}" } }
+      ],
+      "channels": [
+        { "channel_id": "hl7-map", "label": "HL7 with flag mapping", "kind": "message",
+          "source": { "endpoint": "hl7-in", "protocol": "hl7_mllp", "settings": { "ack_mode": "original" } },
+          "destinations": [
+            { "destination_id": "lis", "label": "LIS", "endpoint": "lis-out", "protocol": "hl7_mllp",
+              "settings": { "ack_mode": "original", "sending_application": "PACKIE", "receiving_application": "LIS" },
+              "mapping": {
+                "tables": { "flags": { "N": "N", "H": "H", "L": "L" } },
+                "rules": [
+                  { "op": "constant", "value": "ORU^R01", "to": "MSH.9" },
+                  { "op": "copy", "from": "PID.3", "to": "PID.3" },
+                  { "op": "copy", "from": "OBR.3", "to": "OBR.3" },
+                  { "op": "constant", "value": "1", "to": "OBX.1" },
+                  { "op": "copy", "from": "OBX.3", "to": "OBX.3" },
+                  { "op": "copy", "from": "OBX.5", "to": "OBX.5" },
+                  { "op": "lookup", "from": "OBX.8", "table": "flags", "to": "OBX.8", "on_missing": "error" }
+                ] },
+              "delivery": { "ack_timeout_seconds": 5 } }
+          ] }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "tcp_client" },
+    "lis": { "kind": "tcp_server" }
+  },
+  "no_body_leak": ["PID-TEST-007", "PID-TEST-008", "TEST^PATIENT"],
+  "steps": [
+    { "do": "accept", "actor": "lis" },
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.in}" },
+
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120000||ORU^R01|CTRL-TE-1|P|2.5.1",
+        "PID|1||PID-TEST-007||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0007|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||95|mg/dL|70-110|X|||F|||20260101115900"
+      ] },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "control_id": "CTRL-TE-1" }, "count": 1,
+      "each": { "state": "routed", "response_code": "AA", "original_text": { "contains": "OBX|1|NM" } } },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-TE-1" }, "count": 1,
+      "each": { "state": "failed", "reason_code": "transform_error", "total_attempts": 0, "attempts": 0 } },
+    { "do": "assert_alert", "actor": "engine", "code": "transform_failed", "scope": { "channel": "hl7-map", "destination": "lis" },
+      "expect": { "severity": "warning", "state": "active" } },
+    { "do": "assert_alert", "actor": "engine", "code": "delivery_needs_attention", "scope": { "channel": "hl7-map", "destination": "lis" },
+      "expect": { "details.failed": 1 } },
+    { "do": "assert_log", "actor": "engine", "event": "delivery.transform_failed", "fields": { "channel_id": "hl7-map" }, "count": 1 },
+    { "do": "expect_no_data", "actor": "lis", "for_ms": 500 },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "hl7-map" }, "within_ms": 0, "expect": { "state": "running" } },
+
+    { "do": "apply_config", "actor": "engine", "expect": "applied", "outcomes": { "hl7-map": "updated" },
+      "runtime": {
+        "schema_version": 1,
+        "endpoints": [
+          { "endpoint_id": "hl7-in", "label": "HL7 in", "kind": "tcp_listener",
+            "settings": { "bind_address": "127.0.0.1", "port": "${port.in}" } },
+          { "endpoint_id": "lis-out", "label": "LIS HL7 interface", "kind": "tcp_client",
+            "settings": { "host": "127.0.0.1", "port": "${actor.lis.port}" } }
+        ],
+        "channels": [
+          { "channel_id": "hl7-map", "label": "HL7 with flag mapping", "kind": "message",
+            "source": { "endpoint": "hl7-in", "protocol": "hl7_mllp", "settings": { "ack_mode": "original" } },
+            "destinations": [
+              { "destination_id": "lis", "label": "LIS", "endpoint": "lis-out", "protocol": "hl7_mllp",
+                "settings": { "ack_mode": "original", "sending_application": "PACKIE", "receiving_application": "LIS" },
+                "mapping": {
+                  "tables": { "flags": { "N": "N", "H": "H", "L": "L", "X": "A" } },
+                  "rules": [
+                    { "op": "constant", "value": "ORU^R01", "to": "MSH.9" },
+                    { "op": "copy", "from": "PID.3", "to": "PID.3" },
+                    { "op": "copy", "from": "OBR.3", "to": "OBR.3" },
+                    { "op": "constant", "value": "1", "to": "OBX.1" },
+                    { "op": "copy", "from": "OBX.3", "to": "OBX.3" },
+                    { "op": "copy", "from": "OBX.5", "to": "OBX.5" },
+                    { "op": "lookup", "from": "OBX.8", "table": "flags", "to": "OBX.8", "on_missing": "error" }
+                  ] },
+                "delivery": { "ack_timeout_seconds": 5 } }
+            ] }
+        ]
+      } },
+    { "do": "expect_open", "actor": "inst", "for_ms": 300, "note": "the source connection survives an in-place apply" },
+
+    { "do": "resend", "actor": "engine", "channel": "hl7-map", "message": { "control_id": "CTRL-TE-1" },
+      "destinations": "all", "mode": "same_message", "expect": "accepted" },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA",
+      "assert": [ { "path": "OBR.3", "equals": "SID-0007" }, { "path": "OBX.8", "equals": "A" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-TE-1" }, "count": 1,
+      "each": { "state": "acknowledged", "mapping_version": 2, "total_attempts": 1 } },
+    { "do": "assert_alert", "actor": "engine", "code": "transform_failed", "scope": { "channel": "hl7-map", "destination": "lis" }, "present": false },
+
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120100||ORU^R01|CTRL-TE-2|P|2.5.1",
+        "PID|1||PID-TEST-008||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0008|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||101|mg/dL|70-110|H|||F|||20260101120000"
+      ] },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA",
+      "assert": [ { "path": "OBX.8", "equals": "H" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-TE-2" }, "count": 1, "within_ms": 5000,
+      "each": { "state": "acknowledged", "mapping_version": 2 } }
+  ]
+}

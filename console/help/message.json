@@ -1,0 +1,35 @@
+{
+  "id": "message",
+  "title": "Message",
+  "summary": "One message: how it was handled and what each destination confirmed.",
+  "routes": ["/messages/:id"],
+  "sections": [
+    {
+      "title": "The record",
+      "paragraphs": [
+        "Identifiers, state, times, source, configuration version and the response sent to the sender. The original opens only on Show original message, as text with control characters named, as hex, or as Fields. It is read for this window only, never put in the address or title, and each view is audited.",
+        "Fields needs Show content first, audited too. The engine lists each field by path (PID.3.1, OBX.5 for HL7; R.3.4 for ASTM), at most 500, with a box to find one; for other messages it gives its reason. When idle, the console clears this and shows the list."
+      ]
+    },
+    {
+      "title": "Deliveries",
+      "paragraphs": [
+        "Each destination shows its state, every attempt and the transformed message. The acknowledgement says what was proved: written (not confirmed by the destination), received (processing not confirmed) or accepted by its application. No acknowledgement in time and Outcome unknown mean it may have been delivered: check first."
+      ]
+    },
+    {
+      "title": "Resend",
+      "paragraphs": [
+        "Same message tries again with the stored output. New message processes the original again with the current configuration; it is the only choice for invalid, aborted, filtered and duplicate messages. A delivery that was acknowledged, got no acknowledgement or has an unknown outcome may already be there, so you confirm the duplicate risk first.",
+        "Give a reason of up to 500 characters if you wish: it is kept with the new attempt and shown on the delivery as Resent, to everyone who opens this message.",
+        "A message with a newer revision shows a notice linking it. Resending the older version may reissue a corrected result, so the dialog names the newer message and asks you to confirm."
+      ]
+    },
+    {
+      "title": "Close a delivery",
+      "paragraphs": [
+        "Close ends a delivery that needs attention, with a reason of 1 to 500 characters. It never contacts the destination; for an uncertain outcome the earlier attempt may have arrived. A delivery that is sending cannot be closed."
+      ]
+    }
+  ]
+}

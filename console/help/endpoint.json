@@ -1,0 +1,27 @@
+{
+  "id": "endpoint",
+  "title": "Endpoint",
+  "summary": "One endpoint: state, who holds it, counters, last error and the channels using it.",
+  "routes": ["/endpoints/:id"],
+  "sections": [
+    {
+      "title": "What you see",
+      "paragraphs": [
+        "The settings summary (never secrets), whether it is enabled, its state and how long it has lasted, and which channel holds it: a serial port or listening socket is held by one channel at a time. Then its active peer, failure streak and next retry counting down, bytes in and out, the last error with the next step, open alerts, and the channels that use it."
+      ]
+    },
+    {
+      "title": "Test connection",
+      "paragraphs": [
+        "Test connection tries the endpoint's saved settings and shows each step with its time. It only opens, connects or reads; a folder test also creates and deletes one empty hidden file to prove it is writable. No data is sent, nothing is changed, and each test is audited. A port a running channel holds reports as in use; that means the endpoint is working."
+      ]
+    },
+    {
+      "title": "Actions",
+      "paragraphs": [
+        "Restart the channels that use it restarts each of them. The confirmation lists the channels that will restart and the ones left alone (paused, disabled or stopped), and says that their sessions close and their counters reset. If the engine refuses one, its explanation is shown for that channel.",
+        "Edit opens the endpoint editor (see Endpoint editor help)."
+      ]
+    }
+  ]
+}

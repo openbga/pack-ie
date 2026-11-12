@@ -1,0 +1,29 @@
+{
+  "id": "filters-and-mappings",
+  "title": "Filters and pass-through",
+  "summary": "Paths, filter operators and what a destination without a mapping does.",
+  "routes": [],
+  "sections": [
+    {
+      "title": "Paths",
+      "paragraphs": [
+        "A path names a field of the message: PID.3[0].1 for HL7 (segment, field, repetition, component), R.3 for the third field of an ASTM R record, col.sample_id for a delimited file column, or the instrument's own field names for AU. Fields and components count from 1; repetitions and occurrences from 0, which is also the default. A path ending at a field gives its whole text; ending at a component gives that component. A missing field is empty text."
+      ]
+    },
+    {
+      "title": "Filters",
+      "paragraphs": [
+        "Source filters decide whether a message continues at all; a destination's filters decide whether it gets a copy. All filters must match.",
+        "The operators are equals, does not equal, is one of and is not one of (comma-separated values), starts with, contains, matches (a regular expression of at most 200 characters), is present, is absent, and the number comparisons greater than and less than, with or equal. Numbers compare exactly; text that is not a number never matches. Ignore case applies to text operators. A missing field satisfies only is absent and does not equal.",
+        "A filter can also combine conditions: All of these hold, Any of these holds, or This does not hold. They nest, so \"not any of: sample id starts with CTL, starts with QC\" skips control samples. Choosing another kind keeps what you typed: a comparison becomes the first condition of the combination.",
+        "The values of is one of can be numbers as well as text; they are compared as text."
+      ]
+    },
+    {
+      "title": "No mapping: pass-through",
+      "paragraphs": [
+        "A destination with no mapping rules and no code tables passes the original message through unchanged, so it must use the source's protocol. The Protocol field says so as soon as it applies, and Validate and Save are blocked until you choose that protocol or add a mapping. To change the content, see Mapping rules help."
+      ]
+    }
+  ]
+}

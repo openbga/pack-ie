@@ -1,0 +1,46 @@
+#!/bin/sh
+# postinst: write the default bootstrap if there is none, then install and start the service.
+set -e
+
+BOOTSTRAP=/etc/packie/bootstrap.json
+
+case "$1" in
+    configure)
+        if [ ! -e "$BOOTSTRAP" ]; then
+            install -d -m 0755 /etc/packie
+            install -m 0644 /usr/share/packie/bootstrap.json "$BOOTSTRAP"
+        fi
+        # An older bootstrap may keep secrets in the OS key store, which a server does not
+        # have: say so (the operator's file is never rewritten).
+        if grep -Eq '"provider"[[:space:]]*:[[:space:]]*"keystore"' "$BOOTSTRAP"; then
+            cat >&2 <<NOTE
+packie: note: $BOOTSTRAP sets "secrets": {"provider": "keystore"}. On Linux the key store is a
+packie: Secret Service (desktop session); without one the engine refuses to start (exit code 2)
+packie: and systemd leaves the service failed. To keep secrets in an owner-only file instead,
+packie: set "secrets": {"provider": "file", "file": "/var/lib/packie/secrets.json"} in that file,
+packie: run 'sudo systemctl restart packie', then store the secrets again with 'packie secrets set'.
+NOTE
+        fi
+        # The user who ran sudo joins the packie group; without sudo (a root shell or an
+        # unattended install) try the login user, else packie prints the usermod command.
+        if [ -z "${SUDO_USER:-}" ]; then
+            LOGIN_USER="$(logname 2>/dev/null || true)"
+            if [ -n "$LOGIN_USER" ] && [ "$LOGIN_USER" != root ]; then
+                SUDO_USER="$LOGIN_USER"
+                export SUDO_USER
+            fi
+        fi
+        if [ -d /run/systemd/system ]; then
+            /usr/bin/packie --bootstrap "$BOOTSTRAP" service install
+        else
+            echo "packie: systemd is not running; run 'sudo packie --bootstrap $BOOTSTRAP service install' on the target system" >&2
+        fi
+        ;;
+    abort-upgrade | abort-remove | abort-deconfigure) ;;
+    *)
+        echo "postinst called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

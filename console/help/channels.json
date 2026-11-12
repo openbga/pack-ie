@@ -1,0 +1,20 @@
+{
+  "id": "channels",
+  "title": "Channels",
+  "summary": "All channels and their states.",
+  "routes": ["/channels"],
+  "sections": [
+    {
+      "title": "What you see",
+      "paragraphs": [
+        "Bridge channels pass bytes between two endpoints unchanged. Message channels store every message, transform it and deliver it to destinations. Each row shows kind and protocol, state, endpoints, messages in and out, queue or buffer and, when there is room, last activity and last error. Text that does not fit ends in an ellipsis and shows whole when you point at it. Narrow windows drop columns from the right; Channel, State and the row menu stay. See States help."
+      ]
+    },
+    {
+      "title": "What to do",
+      "paragraphs": [
+        "Find a channel by its name or an endpoint's, filter by kind and state, or tick Needs attention only. The row menu pauses, resumes, restarts or edits it; pause and restart ask first. Add channel opens the editor (see Channel editor help)."
+      ]
+    }
+  ]
+}

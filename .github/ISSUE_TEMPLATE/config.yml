@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/openbga/pack-ie/security/advisories/new
+    about: Report vulnerabilities privately. Do not open a public issue.
+  - name: Documentation
+    url: https://github.com/openbga/pack-ie/blob/main/docs/operations/README.md
+    about: Install, configure and operate the engine; the README links the specifications and developer guide.

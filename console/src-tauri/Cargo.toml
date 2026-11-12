@@ -1,0 +1,49 @@
+# The console's Tauri shell. It is its own Cargo workspace root (the empty table below), so the
+# engine workspace at the repository root, whose members are `crates/*`, never includes it.
+# Engine crates, when the console needs their types, are reached by path.
+
+[package]
+name = "packie-console"
+description = "Tauri 2 desktop shell for the PACK-IE Console: window, capabilities and thin command adapters"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.97"
+license = "AGPL-3.0-only"
+publish = false
+
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "2.7.2", features = [] }
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+tauri = { version = "2.12.3", features = [] }
+tauri-plugin-dialog = "2.8.2"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt", "sync", "time", "process", "macros"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+packie-config = { path = "../../crates/packie-config" }
+packie-core = { path = "../../crates/packie-core" }
+packie-ipc = { path = "../../crates/packie-ipc" }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+unreachable_pub = "warn"
+unused_must_use = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"

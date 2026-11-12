@@ -1,0 +1,4 @@
+id,note,flag
+SYN-001,"delimiter, quote ""yes""
+and another line",Y
+SYN-002,"",N

@@ -1,0 +1,91 @@
+{
+  "format": 1,
+  "name": "msg-resend",
+  "description": "A rejected delivery is resent on the same message, an acknowledged one needs confirmation and can be resent as a new message, and a rejected delivery can be closed with a reason.",
+  "requirements": ["MSG-03", "MSG-04", "MSG-05", "CON-04", "LOG-03"],
+  "timeout_ms": 45000,
+  "resources": { "ports": ["in"] },
+  "engine": {
+    "runtime": {
+      "schema_version": 1,
+      "endpoints": [
+        { "endpoint_id": "hl7-in", "label": "HL7 in", "kind": "tcp_listener",
+          "settings": { "bind_address": "127.0.0.1", "port": "${port.in}" } },
+        { "endpoint_id": "lis-out", "label": "LIS HL7 interface", "kind": "tcp_client",
+          "settings": { "host": "127.0.0.1", "port": "${actor.lis.port}" } }
+      ],
+      "channels": [
+        { "channel_id": "hl7-resend", "label": "HL7 resend", "kind": "message",
+          "source": { "endpoint": "hl7-in", "protocol": "hl7_mllp", "settings": { "ack_mode": "original" } },
+          "destinations": [
+            { "destination_id": "lis", "label": "LIS", "endpoint": "lis-out", "protocol": "hl7_mllp",
+              "settings": { "ack_mode": "original" }, "mapping": null, "delivery": { "ack_timeout_seconds": 5 } }
+          ] }
+      ]
+    }
+  },
+  "actors": {
+    "inst": { "kind": "tcp_client" },
+    "lis": { "kind": "tcp_server" }
+  },
+  "no_body_leak": ["PID-TEST-005", "PID-TEST-006", "TEST^PATIENT"],
+  "steps": [
+    { "do": "accept", "actor": "lis" },
+    { "do": "connect", "actor": "inst", "host": "127.0.0.1", "port": "${port.in}" },
+
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120000||ORU^R01|CTRL-RS-1|P|2.5.1",
+        "PID|1||PID-TEST-005||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0005|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||95|mg/dL|70-110|N|||F|||20260101115900"
+      ] },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AR",
+      "assert": [ { "path": "MSH.10", "equals": "CTRL-RS-1" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-RS-1" }, "count": 1,
+      "each": { "state": "rejected", "total_attempts": 1 } },
+    { "do": "assert_alert", "actor": "engine", "code": "delivery_needs_attention", "scope": { "channel": "hl7-resend", "destination": "lis" },
+      "expect": { "state": "active", "details.rejected": 1 } },
+
+    { "do": "resend", "actor": "engine", "channel": "hl7-resend", "message": { "control_id": "CTRL-RS-1" },
+      "destinations": ["lis"], "mode": "same_message", "expect": "accepted" },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA",
+      "assert": [ { "path": "MSH.10", "equals": "CTRL-RS-1" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-RS-1" }, "count": 1,
+      "each": { "state": "acknowledged", "ack_level": "accepted", "total_attempts": 2, "attempts": 1 } },
+    { "do": "assert_alert", "actor": "engine", "code": "delivery_needs_attention", "scope": { "channel": "hl7-resend", "destination": "lis" }, "present": false },
+
+    { "do": "resend", "actor": "engine", "channel": "hl7-resend", "message": { "control_id": "CTRL-RS-1" },
+      "destinations": "all", "mode": "same_message", "expect": "rejected", "reason_code": "duplicate_risk_unconfirmed" },
+    { "do": "resend", "actor": "engine", "channel": "hl7-resend", "message": { "control_id": "CTRL-RS-1", "origin": "received" },
+      "destinations": "all", "mode": "new_message", "confirm_duplicate_risk": true, "expect": "accepted" },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AA",
+      "assert": [ { "path": "MSH.10", "equals": "CTRL-RS-1" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "control_id": "CTRL-RS-1", "origin": "resend" }, "count": 1,
+      "each": { "state": "routed", "resent_from": { "exists": true }, "response_code": null } },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.origin": "resend" }, "count": 1, "within_ms": 5000,
+      "each": { "state": "acknowledged" } },
+    { "do": "assert_store", "actor": "engine", "table": "messages", "where": { "control_id": "CTRL-RS-1", "state": "duplicate" }, "count": 0, "within_ms": 0 },
+
+    { "do": "send_message", "actor": "inst", "protocol": "hl7_mllp", "expect_reply": "AA",
+      "segments": [
+        "MSH|^~\\&|SIMLAB|SIMFAC|PACKIE|PACKIEFAC|20260101120500||ORU^R01|CTRL-RS-2|P|2.5.1",
+        "PID|1||PID-TEST-006||TEST^PATIENT||19700101|F",
+        "OBR|1||SID-0006|GLU^Glucose",
+        "OBX|1|NM|GLU^Glucose||88|mg/dL|70-110|N|||F|||20260101120400"
+      ] },
+    { "do": "expect_message", "actor": "lis", "protocol": "hl7_mllp", "reply": "AR",
+      "assert": [ { "path": "MSH.10", "equals": "CTRL-RS-2" } ] },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-RS-2" }, "count": 1,
+      "each": { "state": "rejected" } },
+    { "do": "close_delivery", "actor": "engine", "channel": "hl7-resend", "delivery": { "message.control_id": "CTRL-RS-2" },
+      "reason": "", "expect": "rejected", "reason_code": "reason_required" },
+    { "do": "close_delivery", "actor": "engine", "channel": "hl7-resend", "delivery": { "message.control_id": "CTRL-RS-2" },
+      "reason": "Rejected by partner; entered manually in the LIS", "expect": "accepted" },
+    { "do": "assert_store", "actor": "engine", "table": "deliveries", "where": { "message.control_id": "CTRL-RS-2" }, "count": 1,
+      "each": { "state": "cancelled", "closed_reason": { "contains": "entered manually" } } },
+    { "do": "assert_alert", "actor": "engine", "code": "delivery_needs_attention", "scope": { "channel": "hl7-resend", "destination": "lis" }, "present": false },
+    { "do": "assert_snapshot", "actor": "engine", "target": { "channel": "hl7-resend" },
+      "expect": { "unresolved.rejected": 0, "unresolved.failed": 0, "unresolved.timed_out": 0, "unresolved.outcome_unknown": 0 } }
+  ]
+}

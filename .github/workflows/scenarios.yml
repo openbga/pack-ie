@@ -1,0 +1,105 @@
+name: Scenarios
+
+# The end-to-end suite (tests/scenarios/*.json) against a real `packie` engine, driven by
+# `packie-sim run-all`. Ubuntu is the platform that runs every scenario: it provides virtual
+# serial pairs (pseudo-terminals the `serialport` crate can open at a real baud rate), so
+# bridge-serial-tcp runs here and is skipped on macOS. `--deny-skips` turns any skipped
+# scenario into a failure, so a lost capability cannot hide behind a green run.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write # lets the report step publish a check with the per-scenario results
+
+concurrency:
+  group: scenarios-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+
+jobs:
+  scenarios:
+    name: scenarios (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries (serialport needs libudev)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libudev-dev pkg-config
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-scenarios-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: cargo-scenarios-
+      # Both binaries land in target/debug, which is where packie-sim looks for `packie` when
+      # neither --engine nor PACKIE_BIN is given.
+      - name: Build the engine and the simulator
+        run: cargo build --locked -p packie -p packie-sim
+      # Run directories of failed scenarios, and the port lock files, go to one directory
+      # so that the artifact step can collect them. The path stays short enough for the
+      # engine's Unix socket.
+      - name: Scratch directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/packie-sim" results
+          echo "TMPDIR=$RUNNER_TEMP/packie-sim" >> "$GITHUB_ENV"
+      - name: Run the scenarios
+        run: |
+          target/debug/packie-sim run-all tests/scenarios \
+            --jobs 4 --deny-skips --verbose \
+            --junit results/scenarios-junit.xml
+      # One row per scenario in the job summary; the artifact below carries the JUnit file
+      # and the previous step has already decided the job's result.
+      - name: Publish the report
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET
+          root = ET.parse("results/scenarios-junit.xml").getroot()
+          suites = [root] if root.tag == "testsuite" else list(root)
+          rows = []
+          for suite in suites:
+              for case in suite.iter("testcase"):
+                  if case.find("failure") is not None or case.find("error") is not None:
+                      state = "failed"
+                  elif case.find("skipped") is not None:
+                      state = "skipped"
+                  else:
+                      state = "passed"
+                  rows.append((case.get("name", "?"), state, case.get("time", "")))
+          counts = {s: sum(1 for r in rows if r[1] == s) for s in ("passed", "failed", "skipped")}
+          print(f"## Scenario results: {counts['passed']} passed, {counts['failed']} failed, {counts['skipped']} skipped\n")
+          print("| Scenario | Result | Time (s) |\n| --- | --- | --- |")
+          for name, state, time in rows:
+              print(f"| {name} | {state} | {time} |")
+          EOF
+      # Sockets and the links to pseudo-terminals cannot be uploaded; the rest of a failed
+      # run's directory (bootstrap, runtime, state, logs) can.
+      - name: Prepare the state of failed scenarios for upload
+        if: ${{ !cancelled() }}
+        run: find "$TMPDIR" \( -type s -o -type l \) -delete
+      - name: Keep the report and the state of failed scenarios
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenario-results
+          path: |
+            results/
+            ${{ env.TMPDIR }}/packie-sim-*
+          if-no-files-found: ignore
+          retention-days: 14

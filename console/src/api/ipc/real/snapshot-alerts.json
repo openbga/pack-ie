@@ -1,0 +1,385 @@
+{
+  "node": {
+    "node_id": "node-2",
+    "display_name": "Test node with alerts",
+    "version": "0.1.0",
+    "hosting_mode": "console",
+    "started_at": "2026-11-06T20:14:28.851897000Z",
+    "captured_at": "2026-11-06T20:14:40.073245000Z",
+    "uptime_seconds": 11,
+    "node_state": "degraded",
+    "config": {
+      "active_version": 1,
+      "pending_version": null,
+      "last_apply": {
+        "at": "2026-11-06T20:14:36.054456000Z",
+        "result": "applied"
+      }
+    },
+    "channel_counts": {
+      "starting": 0,
+      "running": 0,
+      "retrying": 1,
+      "degraded": 0,
+      "stopped": 1
+    },
+    "endpoint_counts": {
+      "disabled": 0,
+      "connecting": 0,
+      "listening": 1,
+      "connected": 0,
+      "retrying": 1,
+      "disconnected": 2,
+      "error": 0
+    },
+    "totals": {
+      "bytes_in": 0,
+      "bytes_out": 0,
+      "messages_stored": null,
+      "deliveries_unresolved": null,
+      "deliveries_queued": null,
+      "alerts_active": {
+        "warning": 1,
+        "critical": 0
+      }
+    },
+    "store": {
+      "state": "not_configured",
+      "size_bytes": null,
+      "free_disk_bytes": 349957775360
+    }
+  },
+  "channels": [
+    {
+      "channel_id": "hl7",
+      "label": "HL7 results",
+      "kind": "message",
+      "enabled": true,
+      "state": "stopped",
+      "stop_reason": "not_implemented",
+      "state_since": "2026-11-06T20:14:36.054390000Z",
+      "config_version": 1,
+      "instance_started_at": null,
+      "endpoints": ["hl7-in", "out-dir"],
+      "traffic": {
+        "bytes_in": 0,
+        "bytes_out": 0,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 0,
+        "last_activity": null
+      },
+      "retry_count": 0,
+      "next_retry_at": null,
+      "last_error": null,
+      "recent_errors": [],
+      "allowed_actions": [],
+      "bridge": null,
+      "message": {
+        "source": {
+          "endpoint_id": "hl7-in",
+          "label": "HL7 in",
+          "kind": "tcp_listener",
+          "role": "source",
+          "state": "disconnected",
+          "consecutive_failures": 0,
+          "active_peer": null,
+          "last_activity": null
+        },
+        "protocol": "hl7_mllp",
+        "session": "closed",
+        "counters": {
+          "received": 0,
+          "duplicates": 0,
+          "invalid": 0,
+          "filtered": 0,
+          "aborted": 0,
+          "bytes_in": 0
+        },
+        "last_received_at": null,
+        "destinations": [
+          {
+            "destination_id": "csv",
+            "label": "CSV",
+            "enabled": true,
+            "endpoint": {
+              "endpoint_id": "out-dir",
+              "label": "Result files",
+              "kind": "folder",
+              "role": "csv",
+              "state": "disconnected",
+              "consecutive_failures": 0,
+              "active_peer": null,
+              "last_activity": null
+            },
+            "protocol": "delimited_file",
+            "queue": {
+              "queued": 0,
+              "sending": 0,
+              "oldest_queued_at": null,
+              "next_attempt_at": null
+            },
+            "unresolved": {
+              "rejected": 0,
+              "timed_out": 0,
+              "outcome_unknown": 0,
+              "failed": 0,
+              "transform_errors": 0
+            },
+            "counters": {
+              "attempts": 0,
+              "acknowledged": 0,
+              "rejected": 0,
+              "timed_out": 0,
+              "outcome_unknown": 0,
+              "failed": 0,
+              "bytes_out": 0
+            },
+            "last_attempt_at": null,
+            "last_ack_at": null,
+            "last_error": null
+          }
+        ],
+        "unresolved": {
+          "rejected": 0,
+          "timed_out": 0,
+          "outcome_unknown": 0,
+          "failed": 0,
+          "transform_errors": 0
+        }
+      }
+    },
+    {
+      "channel_id": "br2",
+      "label": "Dead bridge",
+      "kind": "bridge",
+      "enabled": true,
+      "state": "retrying",
+      "stop_reason": null,
+      "state_since": "2026-11-06T20:14:36.055074000Z",
+      "config_version": 1,
+      "instance_started_at": "2026-11-06T20:14:36.054428000Z",
+      "endpoints": ["inst2", "dead"],
+      "traffic": {
+        "bytes_in": 0,
+        "bytes_out": 0,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 4,
+        "last_activity": null
+      },
+      "retry_count": 4,
+      "next_retry_at": "2026-11-06T20:14:42.562241000Z",
+      "last_error": {
+        "at": "2026-11-06T20:14:39.562266000Z",
+        "summary": "Channel br2 endpoint B \"Dead LIS\" connect failed: connection refused.",
+        "next_action": "Retrying in 3s."
+      },
+      "recent_errors": [
+        {
+          "at": "2026-11-06T20:14:36.055099000Z",
+          "summary": "Channel br2 endpoint B \"Dead LIS\" connect failed: connection refused.",
+          "next_action": "Retrying in 500 ms."
+        },
+        {
+          "at": "2026-11-06T20:14:36.557705000Z",
+          "summary": "Channel br2 endpoint B \"Dead LIS\" connect failed: connection refused.",
+          "next_action": "Retrying in 1s."
+        },
+        {
+          "at": "2026-11-06T20:14:37.559871000Z",
+          "summary": "Channel br2 endpoint B \"Dead LIS\" connect failed: connection refused.",
+          "next_action": "Retrying in 2s."
+        },
+        {
+          "at": "2026-11-06T20:14:39.562266000Z",
+          "summary": "Channel br2 endpoint B \"Dead LIS\" connect failed: connection refused.",
+          "next_action": "Retrying in 3s."
+        }
+      ],
+      "allowed_actions": ["pause", "restart"],
+      "bridge": {
+        "session": "closed",
+        "session_since": "2026-11-06T20:14:39.562263000Z",
+        "connect_strategy": "parallel",
+        "receiver": null,
+        "endpoint_a": {
+          "endpoint_id": "inst2",
+          "label": "Inst 2",
+          "kind": "tcp_listener",
+          "role": "a",
+          "state": "listening",
+          "consecutive_failures": 0,
+          "active_peer": null,
+          "last_activity": null
+        },
+        "endpoint_b": {
+          "endpoint_id": "dead",
+          "label": "Dead LIS",
+          "kind": "tcp_client",
+          "role": "b",
+          "state": "retrying",
+          "consecutive_failures": 4,
+          "active_peer": null,
+          "last_activity": null
+        },
+        "a_to_b": {
+          "bytes": 0,
+          "messages": null,
+          "buffered_segments": 0,
+          "buffered_bytes": 0,
+          "max_segments": 1000,
+          "max_bytes": 10485760,
+          "overflowing": false,
+          "overflow_count": 0
+        },
+        "b_to_a": {
+          "bytes": 0,
+          "messages": null,
+          "buffered_segments": 0,
+          "buffered_bytes": 0,
+          "max_segments": 1000,
+          "max_bytes": 10485760,
+          "overflowing": false,
+          "overflow_count": 0
+        },
+        "tap": {
+          "framer": "none",
+          "record_messages": false,
+          "framing_errors": null,
+          "tap_dropped": null,
+          "transcript_viewers": 0
+        }
+      },
+      "message": null
+    }
+  ],
+  "endpoints": [
+    {
+      "endpoint_id": "hl7-in",
+      "label": "HL7 in",
+      "kind": "tcp_listener",
+      "enabled": true,
+      "state": "disconnected",
+      "state_since": "2026-11-06T20:14:36.054371000Z",
+      "peer": null,
+      "held_by": null,
+      "settings_summary": "127.0.0.1:5411",
+      "consecutive_failures": 0,
+      "retry_count": 0,
+      "next_retry_at": null,
+      "traffic": {
+        "bytes_in": 0,
+        "bytes_out": 0,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 0,
+        "last_activity": null
+      },
+      "last_error": null,
+      "rejections": null,
+      "channels": ["hl7"]
+    },
+    {
+      "endpoint_id": "out-dir",
+      "label": "Result files",
+      "kind": "folder",
+      "enabled": true,
+      "state": "disconnected",
+      "state_since": "2026-11-06T20:14:36.054371000Z",
+      "peer": null,
+      "held_by": null,
+      "settings_summary": "/tmp/packie-scratch/out",
+      "consecutive_failures": 0,
+      "retry_count": 0,
+      "next_retry_at": null,
+      "traffic": {
+        "bytes_in": 0,
+        "bytes_out": 0,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 0,
+        "last_activity": null
+      },
+      "last_error": null,
+      "rejections": null,
+      "channels": ["hl7"]
+    },
+    {
+      "endpoint_id": "dead",
+      "label": "Dead LIS",
+      "kind": "tcp_client",
+      "enabled": true,
+      "state": "retrying",
+      "state_since": "2026-11-06T20:14:39.562242000Z",
+      "peer": null,
+      "held_by": null,
+      "settings_summary": "127.0.0.1:5499",
+      "consecutive_failures": 4,
+      "retry_count": 4,
+      "next_retry_at": "2026-11-06T20:14:42.562241000Z",
+      "traffic": {
+        "bytes_in": 0,
+        "bytes_out": 0,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 4,
+        "last_activity": null
+      },
+      "last_error": {
+        "at": "2026-11-06T20:14:39.562266000Z",
+        "summary": "Channel br2 endpoint B \"Dead LIS\" connect failed: connection refused.",
+        "next_action": "Retrying in 3s."
+      },
+      "rejections": null,
+      "channels": ["br2"]
+    },
+    {
+      "endpoint_id": "inst2",
+      "label": "Inst 2",
+      "kind": "tcp_listener",
+      "enabled": true,
+      "state": "listening",
+      "state_since": "2026-11-06T20:14:36.054720000Z",
+      "peer": null,
+      "held_by": "br2",
+      "settings_summary": "127.0.0.1:5412",
+      "consecutive_failures": 0,
+      "retry_count": 4,
+      "next_retry_at": "2026-11-06T20:14:42.562241000Z",
+      "traffic": {
+        "bytes_in": 0,
+        "bytes_out": 0,
+        "messages_in": 0,
+        "messages_out": 0,
+        "errors": 0,
+        "last_activity": null
+      },
+      "last_error": null,
+      "rejections": null,
+      "channels": ["br2"]
+    }
+  ],
+  "alerts": [
+    {
+      "alert_id": "01a1b27f-ba5e-778c-bd33-164d17bb0710",
+      "code": "endpoint_down",
+      "severity": "warning",
+      "state": "active",
+      "channel_id": "br2",
+      "endpoint_id": "dead",
+      "destination_id": null,
+      "summary": "Dead LIS is retrying (Dead bridge needs it)",
+      "next_action": "Check the device or remote system and the network path. The engine keeps retrying.",
+      "first_seen_at": "2026-11-06T20:14:37.662134000Z",
+      "last_seen_at": "2026-11-06T20:14:39.766562000Z",
+      "cleared_at": null,
+      "occurrences": 1,
+      "details": {
+        "failures": 4,
+        "seconds": 0,
+        "state": "retrying"
+      }
+    }
+  ]
+}

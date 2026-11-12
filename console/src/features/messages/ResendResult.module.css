@@ -1,0 +1,25 @@
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.result:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.destination {
+  font-weight: var(--font-weight-semibold);
+}

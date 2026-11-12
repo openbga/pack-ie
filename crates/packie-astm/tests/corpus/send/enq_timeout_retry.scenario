@@ -1,0 +1,15 @@
+# Silence after ENQ: EOT returns the line to neutral, then the sender waits and tries again.
+option max_enq_attempts 2
+record H|\^&|||PACKIE^1.0
+submit
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect timer 10
+tick
+expect write ENQ
+expect timer 15
+tick
+expect write EOT
+expect send_aborted establishment_failed

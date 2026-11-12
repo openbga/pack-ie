@@ -1,0 +1,67 @@
+/* The table fits the space the page gives it (columns drop out in a fixed order). */
+.frame {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.kind {
+  display: inline-block;
+  margin-inline-start: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+}
+
+.badges {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+/* Two lines at most; the full text is the title. */
+.clamp {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/*
+ * A channel with an open critical alert: a light danger tint on its row with a solid bar at its
+ * start, whatever its state, so a table of mostly critical rows stays readable. The "Critical
+ * alert" chip in the state cell says it in words; the marker sits in the channel cell.
+ */
+:global([role="row"]):has(.critical) {
+  background: color-mix(in srgb, var(--tone-danger-bg) 40%, var(--color-surface));
+  box-shadow: inset 4px 0 0 var(--tone-danger-solid);
+}
+
+:global([role="row"]):has(.critical):hover {
+  background: color-mix(in srgb, var(--tone-danger-bg) 65%, var(--color-surface));
+}
+
+.critical {
+  display: none;
+}
+
+/* A single line that truncates; its title carries the whole text. */
+.oneLine {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
