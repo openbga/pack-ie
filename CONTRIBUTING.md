@@ -88,8 +88,10 @@ descriptions. Keep local investigation artifacts out of the repository.
 
 ## Propose a change
 
-Open an issue for a substantial behavior or design change before implementing it. Keep PRs
-small and focused. Include the problem and resulting behavior, affected specification or
+Open an issue for a substantial behavior or design change before implementing it. Open pull
+requests against `develop`, the integration branch; `main` is the release branch and receives
+`develop` by pull request ([branches](docs/development/README.md#branches-and-the-presentation-website)).
+Keep PRs small and focused. Include the problem and resulting behavior, affected specification or
 requirement, tests/checks run with results, documentation updates, new dependencies, and any
 remaining limits. Include a synthetic reproduction for a bug and a screenshot for a visible
 UI change. Never include patient information, real laboratory exports or credentials.
