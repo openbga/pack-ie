@@ -120,6 +120,24 @@ This test removes the existing generated `.ts` files, exports the reachable DTOs
 hand. Update the console's `src/api/ipc/` mapping and `src-tauri/` handling as needed, then
 run console typecheck and affected tests.
 
+## Branches and the presentation website
+
+`develop` is the default branch and the integration branch: pull requests target it. `main`
+is the release branch: it receives `develop` by pull request, and releases are cut from it.
+CI and the scenario suite run on every pull request and on every push to either branch.
+
+The [presentation website](https://openbga.github.io/pack-ie/) is the static content of
+`website/`, with no build step. [pages.yml](../../.github/workflows/pages.yml) publishes it
+with GitHub Pages when `website/` changes on `main`, or when run by hand, so a change made on
+`develop` goes live when it reaches `main`. Preview it with
+`python3 -m http.server -d website`.
+
+The screens in `website/media/screens/` are captured from the console's browser mock
+(`npm run dev`, then `/?mock=1&steady=1#/messages` and the other pages) at 1440×900 and show
+demo data only; recapture them when the pages change. `og-image.png` is `og-image.svg`
+rendered at 1200×630. Keep the page's status and license statements in step with
+[STATUS.md](../../STATUS.md) and the [README](../../README.md).
+
 ## Verification and release
 
 For a changed crate, run its tests and all-target Clippy, plus affected scenarios; for
@@ -137,6 +155,7 @@ root. [Testing](../testing.md) defines the integration gate.
 | CI: `tauri` | Separate console Rust workspace: locked check and all-target clippy on Ubuntu. |
 | CI: `deny` | Dependency licenses and advisories through cargo-deny. |
 | [Scenarios](../../.github/workflows/scenarios.yml): `scenarios` | Ubuntu builds both binaries, runs all cases with `--jobs 4 --deny-skips --verbose`, publishes JUnit and retains failed state/log artifacts. |
+| [Publish presentation](../../.github/workflows/pages.yml): `deploy` | Uploads `website/` and deploys it to GitHub Pages; runs for website changes on `main`. |
 
 CI and Scenarios run for pushes to `main` and pull requests; Scenarios also supports manual
 dispatch. Performance targets are measured with `packie-sim bench` before a release; see
