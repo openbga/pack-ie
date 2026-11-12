@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Positive ACK: a free, open-source interface engine for clinical laboratories. Instrument interfaces (ASTM, CLSI LIS01-A2/LIS02-A2), HL7 v2 over MLLP and file exchange on one lab computer. AGPL-3.0-only. In development.">
+    <meta name="theme-color" content="#0a6f7a">
+    <meta property="og:site_name" content="Positive ACK">
+    <meta property="og:title" content="Positive ACK: free, open-source interface engine for laboratories">
+    <meta property="og:description" content="Connect laboratory instruments, LIS/LIMS, EHRs and applications: ASTM, HL7 v2 and files, with a durable record of every message. Free software for Windows, macOS and Linux.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:url" content="https://openbga.github.io/pack-ie/">
+    <link rel="canonical" href="https://openbga.github.io/pack-ie/">
+    <meta property="og:image" content="https://openbga.github.io/pack-ie/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Positive ACK: free, open-source interface engine for laboratories">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+    <title>Positive ACK: free, open-source interface engine for laboratories</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Positive ACK Interface Engine",
+        "alternateName": "PACK-IE",
+        "description": "Free, open-source interface engine for clinical laboratories: instrument interfaces (ASTM, CLSI LIS01-A2/LIS02-A2), HL7 v2 over MLLP and file exchange between analyzers, LIS/LIMS, EHRs and applications, on one laboratory computer. In development; not clinically validated.",
+        "url": "https://openbga.github.io/pack-ie/",
+        "applicationCategory": "BusinessApplication",
+        "applicationSubCategory": "Laboratory interface engine",
+        "operatingSystem": "Windows, macOS, Linux",
+        "softwareVersion": "0.2.0",
+        "license": "https://spdx.org/licenses/AGPL-3.0-only.html",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Organization", "name": "BGASoft Inc." },
+        "copyrightHolder": { "@type": "Organization", "name": "BGASoft Inc." },
+        "copyrightYear": 2026,
+        "image": "https://openbga.github.io/pack-ie/logo.svg",
+        "screenshot": "https://openbga.github.io/pack-ie/media/screens/messages-1440.webp",
+        "sameAs": "https://github.com/openbga/pack-ie"
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+      <a class="wordmark" href="./" aria-label="Positive ACK home">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M6 11h20V7l9 7-9 7v-4H6zM34 23H14v-4l-9 7 9 7v-4h20z" fill="currentColor"/></svg>
+        <span class="wordmark-text"><span class="wordmark-product">Positive <span>ACK</span></span><span class="wordmark-parent">An OpenBGA project</span></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#console">Console</a>
+        <a href="#interfaces">Interfaces</a>
+        <a href="#principles">Principles</a>
+        <a href="#status">Status</a>
+        <a href="https://github.com/openbga/pack-ie">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Open source · AGPL-3.0-only · In development</p>
+          <h1 id="hero-title">Instruments. HL7. Files.<br><span>One lab interface engine.</span></h1>
+          <p class="intro">Positive ACK is a free, open-source interface engine for clinical laboratories. It connects analyzers, LIS/LIMS, EHRs and other applications, and keeps a durable record of every message it handles, on a computer the lab owns.</p>
+          <div class="actions">
+            <a class="button primary" href="https://github.com/openbga/pack-ie">Get the source on GitHub <span aria-hidden="true">↗</span></a>
+            <a class="button secondary" href="https://github.com/openbga/pack-ie/blob/main/docs/operations/README.md">Read the operator guides <span aria-hidden="true">↗</span></a>
+          </div>
+          <ul class="facts">
+            <li>Runs on one computer</li>
+            <li>No cloud service required</li>
+            <li>Free to use and modify</li>
+          </ul>
+          <p class="development-note"><strong>Development on synthetic data.</strong> Version 0.2.0 is built and tested. No release has been published, installers are unsigned and the software is not clinically validated.</p>
+        </div>
+        <aside class="connector-preview" aria-label="Interfaces">
+          <div class="preview-heading"><span>Any source</span><span>Any destination</span></div>
+          <ol>
+            <li><span class="step-number">01</span><div><strong>Instruments</strong><span>ASTM E1381/E1394 · CLSI LIS01-A2/LIS02-A2 · AU400/AU640 · serial and TCP</span></div></li>
+            <li><span class="step-number">02</span><div><strong>HL7 v2</strong><span>MLLP client and listener, original and enhanced acknowledgements tracked per message</span></div></li>
+            <li><span class="step-number">03</span><div><strong>Files</strong><span>Delimited files from templates, watched folders and SFTP</span></div></li>
+          </ol>
+          <div class="local-record"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="5" width="24" height="17" rx="2"/><path d="M16 22v5M10 27h12"/></svg><span>Every message stored<br><strong>on the lab’s computer.</strong></span></div>
+        </aside>
+      </section>
+
+      <section class="console-section" id="console" aria-labelledby="console-title">
+        <div class="wrap">
+          <div class="section-heading"><h2 id="console-title">See every message,<br>and what became of it.</h2><p>The engine runs as an operating-system service. A desktop console attaches to it on the same computer to watch channels, search messages, read logs and change configuration.</p></div>
+          <figure class="screen">
+            <img src="media/screens/messages-1440.webp" width="1440" height="900" alt="The Messages page of the console: a filterable grid of received messages with their channel, state, delivery summary per destination, message type and identifiers.">
+            <figcaption><strong>Messages.</strong> Each message shows where it came from and the outcome at every destination: accepted, queued, written, or outcome unknown. Search by identifier, filter by state, resend with a reason, export.</figcaption>
+          </figure>
+          <div class="screen-pair">
+            <figure class="screen">
+              <img src="media/screens/dashboard-1440.webp" width="1440" height="900" loading="lazy" alt="The Dashboard: engine state, alerts, unresolved deliveries, store and disk figures, and a list of channels with their state, endpoints, traffic and queues.">
+              <figcaption><strong>Dashboard.</strong> Engine state, open alerts, unresolved deliveries and every channel with its endpoints, traffic and queue.</figcaption>
+            </figure>
+            <figure class="screen">
+              <img src="media/screens/audit-1440.webp" width="1440" height="900" loading="lazy" alt="The Audit page: a list of operator actions with time, operating-system account, action, object and outcome, with filters, export and a Verify chain button.">
+              <figcaption><strong>Audit.</strong> Who applied a configuration, viewed a message body or restarted a channel, recorded against the operating-system account in a hash-chained log.</figcaption>
+            </figure>
+          </div>
+          <p class="demo-note">Screens show demo data. Instrument names in them are example channel labels, not a list of instruments the software has been qualified on.</p>
+        </div>
+      </section>
+
+      <section class="interfaces-section" id="interfaces" aria-labelledby="interfaces-title">
+        <div class="wrap">
+          <div class="section-heading"><h2 id="interfaces-title">Connect what the lab already has.</h2><p>A channel pairs a source with one or more destinations, with optional filters and mappings, configured without writing code.</p></div>
+          <dl class="principles">
+            <div><dt>Instrument interfaces</dt><dd>Receive results from analyzers and send orders to them over ASTM E1381/E1394 (CLSI LIS01-A2/LIS02-A2) and the AU400/AU640 fixed-width protocol, on serial ports or TCP.</dd></div>
+            <div><dt>HL7 v2 interfaces</dt><dd>Exchange orders and results with LIS, LIMS, EHR and practice systems over MLLP, as client or listener. Each message keeps its acknowledgement history.</dd></div>
+            <div><dt>File interfaces</dt><dd>Read and write delimited files from templates, in watched folders or over SFTP, for instruments and applications that only speak files.</dd></div>
+            <div><dt>Bridge channels</dt><dd>Pass a live byte stream between two endpoints (serial, virtual serial, TCP) with bounded buffers, reconnection and a traffic transcript, when the two sides already speak the same protocol.</dd></div>
+            <div><dt>Filters and mappings</dt><dd>Map fields, translate codes, calculate with exact decimals and route to several destinations. Presets cover common instrument layouts; every configuration version is kept for review.</dd></div>
+            <div><dt>Service and command line</dt><dd>One engine installed as a Windows service, launchd daemon or systemd unit. The same binary is the command-line client for status, messages, logs, configuration, audit and backup.</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="ownership-section" id="principles" aria-labelledby="principles-title">
+        <div class="wrap ownership-layout">
+          <div><h2 id="principles-title">A receipt for<br>every message.</h2><p class="intro">An interface is only as trustworthy as its record. Positive ACK commits a message to its store before it acknowledges the sender, and reports failures as failures.</p></div>
+          <dl class="principles">
+            <div><dt>Durable by default</dt><dd>Every message received and sent is stored with its acknowledgements, retries and outcome. A transport acknowledgement is never mistaken for successful processing.</dd></div>
+            <div><dt>Explicit failures</dt><dd>Rejected, timed out and unknown outcomes are shown as such. Duplicates are detected; a message can be resent or closed with a reason.</dd></div>
+            <div><dt>Records a laboratory needs</dt><dd>Operator attribution from the operating-system account, a hash-chained audit log, configuration change control with sign-off, backup and restore, and transmission reports.</dd></div>
+            <div><dt>Local by design</dt><dd>Runs on one laboratory computer on Windows, macOS or Linux, inside the lab network. No server to run, no subscription, no cloud dependency.</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="status-section" id="status" aria-labelledby="status-title">
+        <div class="wrap">
+          <div class="section-heading"><h2 id="status-title">Built and tested.<br>Clear about what remains.</h2><p>The repository’s <a href="https://github.com/openbga/pack-ie/blob/main/STATUS.md">status page</a> records what is verified on each platform and what is still open.</p></div>
+          <table class="status-table">
+            <caption>Project status · version 0.2.0 · November 2026</caption>
+            <thead><tr><th scope="col">Now</th><th scope="col">Remaining</th></tr></thead>
+            <tbody>
+              <tr><td>Source published under AGPL-3.0-only, with operator guides, specifications and a developer guide</td><td>A first release: signed installers that carry the license and third-party notices</td></tr>
+              <tr><td>Automated tests, simulator scenarios, fuzzing and multi-hour endurance runs without a lost or duplicated message</td><td>Installed-service checks on Windows; x86-64 Linux and physical serial hardware</td></tr>
+              <tr><td>Presets for common instrument layouts, built from published interface documentation and synthetic tests</td><td>Qualification on real instruments, which each laboratory performs before clinical use</td></tr>
+            </tbody>
+          </table>
+          <div class="notices">
+            <section aria-labelledby="license-title">
+              <h3 id="license-title">License</h3>
+              <p>Licensed under <a href="https://github.com/openbga/pack-ie/blob/main/LICENSE">GNU Affero GPL version 3 only (AGPL-3.0-only)</a>. Commercial use and redistribution are permitted. Distributors must preserve the required notices, license covered works under AGPLv3, and provide corresponding source as the license requires, including to users of a modified version offered over a network. Third-party material retains its own terms.</p>
+              <p>Copyright © 2026 BGASoft Inc. and OpenBGA contributors. OpenBGA and the OpenBGA product names and logos are trademarks of BGASoft Inc. The license does not grant permission to use them (AGPL-3.0 section 7(e)), except as needed to describe the origin of the software.</p>
+            </section>
+            <section class="disclaimer" id="disclaimer" aria-labelledby="disclaimer-title">
+              <h3 id="disclaimer-title">Development disclaimer</h3>
+              <p><strong>This project is vibe coded:</strong> developed with substantial AI assistance. Reasonable effort goes into research, planning, analysis, review and testing. That effort does not guarantee correctness, security, regulatory compliance or fitness for clinical use. Built and tested on synthetic data; not clinically validated.</p>
+              <p>Provided as is, with AGPLv3’s warranty exclusions and liability limitations, subject to applicable law and written agreements. This notice does not change the license.</p>
+            </section>
+          </div>
+          <section class="support" id="support" aria-labelledby="support-title">
+            <h3 id="support-title">Project and support</h3>
+            <p>Positive ACK is an open-source project of <a href="https://bgasoft.com">BGASoft</a>, a laboratory software company, and part of <a href="https://github.com/openbga">OpenBGA</a>.</p>
+            <p><strong>Community use.</strong> The software is free under the AGPL-3.0-only license and is provided as is. The project does not include a support commitment: <a href="https://github.com/openbga/pack-ie/issues">issues</a> and pull requests are welcome and are answered on a best-effort basis.</p>
+            <p><strong>Are you looking for support?</strong> Contact <a href="https://bgasoft.com">bgasoft.com</a>.</p>
+          </section>
+          <div class="closing"><p>Build it, run it on synthetic data, tell us what breaks.</p><div class="actions"><a class="button primary" href="https://github.com/openbga/pack-ie/blob/main/CONTRIBUTING.md#build">Build from source <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/openbga/pack-ie/blob/main/docs/operations/first-channel.md">Configure a first channel</a></div></div>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap footer-layout">
+        <p class="footer-brand">Positive ACK Interface Engine<br><span class="byline">An <a href="https://github.com/openbga">OpenBGA</a> project</span><br><span class="byline">Copyright © 2026 BGASoft Inc. and OpenBGA contributors.</span></p>
+        <nav aria-label="Project">
+          <h2>Project</h2>
+          <a href="https://github.com/openbga/pack-ie">Repository</a>
+          <a href="https://github.com/openbga/pack-ie/blob/main/docs/operations/README.md">Operator guides</a>
+          <a href="https://github.com/openbga/pack-ie/blob/main/STATUS.md">Status</a>
+          <a href="https://github.com/openbga/pack-ie/blob/main/CONTRIBUTING.md">Contributing</a>
+        </nav>
+        <nav aria-label="Related">
+          <h2>Related</h2>
+          <a href="https://openbga.github.io/steady-state-lims/">Steady State LIMS</a>
+          <a href="https://openbga.github.io/smart-roots-lims/">Smart Roots LIMS</a>
+          <a href="https://openbga.github.io/fresh-coa-lims/">Fresh CoA LIMS</a>
+        </nav>
+        <nav aria-label="Legal">
+          <h2>Legal</h2>
+          <a href="https://github.com/openbga/pack-ie/blob/main/LICENSE">AGPL-3.0-only license</a>
+          <a href="https://github.com/openbga/pack-ie/blob/main/NOTICE">Copyright and trademark notice</a>
+          <a href="https://github.com/openbga/pack-ie/blob/main/SECURITY.md">Security policy</a>
+          <a href="#disclaimer">Development disclaimer</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

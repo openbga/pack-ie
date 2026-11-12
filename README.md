@@ -1,5 +1,6 @@
 # Positive ACK Interface Engine (PACK-IE)
 
+[Presentation website](https://openbga.github.io/pack-ie/) ·
 [Operator guides](docs/operations/README.md) ·
 [Developer guide](docs/development/README.md) ·
 [Contributing](CONTRIBUTING.md) ·
@@ -12,6 +13,8 @@ MLLP, imports and exports files, bridges serial and TCP ports, and keeps a durab
 of every message it handles. It runs on one computer the laboratory owns, inside the lab
 network, with no cloud service required. It is an [OpenBGA](https://github.com/openbga)
 project.
+
+[![The Messages page of the PACK-IE Console: received messages with their channel, state and delivery outcome per destination, shown with demo data](website/media/screens/messages-1440.webp)](https://openbga.github.io/pack-ie/)
 
 **Status: development on synthetic data.** Version 0.2.0 is built and tested, but no
 release has been published, installers are unsigned and the software is not clinically
